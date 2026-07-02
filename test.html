@@ -1,0 +1,7 @@
+<script src="turndown.js"></script><script src="turndown-plugin-gfm.js"></script><script>
+const html = `<p _ngcontent-ng-c4081659000="" class="caption template-content-paragraph"><table class="markdown-table"><thead><tr><th>Location</th><th>Scope</th></tr></thead><tbody><tr><td><code>&lt;workspace-root&gt;/.agents/skills/&lt;skill-folder&gt;/</code></td><td>Workspace-specific</td></tr><tr><td><code>~/.gemini/config/skills/&lt;skill-folder&gt;/</code></td><td>Global (all workspaces)</td></tr></tbody></table></p>`;
+const turndownService = new TurndownService({ headingStyle: "atx" });
+const gfm = turndownPluginGfm.gfm;
+turndownService.use(gfm);
+console.log("RESULT:\\n" + turndownService.turndown(html));
+</script>

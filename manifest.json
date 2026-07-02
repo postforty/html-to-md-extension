@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "HTML to MD Saver",
+  "version": "1.0",
+  "description": "웹 페이지의 요소를 선택해 마크다운 파일로 저장합니다.",
+  "permissions": ["activeTab", "scripting", "downloads"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
