@@ -9,9 +9,9 @@ ${text}`;
   if (mode === 'both') {
     promptText = `Translate the following Markdown content to Korean.
 Crucially, you must interleave the translation and the original text paragraph by paragraph (or section by section).
-For every paragraph, heading, or block element, output the Korean translation first, and immediately below it, output the ORIGINAL English text formatted as a blockquote (starting with '> ').
-Do not wrap the entire document in one blockquote, do it individually for each part.
-Maintain all original formatting. Only output the final Markdown without any additional conversational text.
+For every paragraph, heading, or block element, output the Korean translation first, and immediately below it, output the ORIGINAL English text.
+Do NOT format the original text as a blockquote. Maintain all original formatting exactly as it was.
+Only output the final Markdown without any additional conversational text.
 
 Markdown to translate:
 ${text}`;

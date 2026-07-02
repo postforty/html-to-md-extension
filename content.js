@@ -5,6 +5,10 @@ if (!window.hasInjectedElementSelector) {
   let highlightedElement = null;
   let originalOutline = "";
   let originalBackgroundColor = "";
+  
+  // 다중 선택 상태 관리
+  let selectedElements = []; 
+  let floatingBtn = null;
 
   function showLoadingToast() {
     const toast = document.createElement("div");
@@ -83,7 +87,10 @@ if (!window.hasInjectedElementSelector) {
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = "취소";
     cancelBtn.style.cssText = "padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
-    cancelBtn.onclick = () => modalOverlay.remove();
+    cancelBtn.onclick = () => {
+      modalOverlay.remove();
+      startSelection(); // 다시 요소 선택 모드로 진입
+    };
 
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "다운로드 (Save as .md)";
@@ -94,6 +101,7 @@ if (!window.hasInjectedElementSelector) {
         markdown: textarea.value
       });
       modalOverlay.remove();
+      window.hasInjectedElementSelector = false; // 완전히 종료
     };
 
     footer.appendChild(cancelBtn);
@@ -107,91 +115,221 @@ if (!window.hasInjectedElementSelector) {
     document.body.appendChild(modalOverlay);
   }
 
+  // 플로팅 버튼 제어 로직
+  function updateFloatingButton() {
+    if (selectedElements.length > 0) {
+      if (!floatingBtn) {
+        floatingBtn = document.createElement("div");
+        floatingBtn.style.cssText = `
+          position: fixed;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #0078D7;
+          color: white;
+          padding: 12px 24px;
+          border-radius: 30px;
+          font-family: sans-serif;
+          font-size: 16px;
+          font-weight: bold;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+          z-index: 9999999;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        `;
+        floatingBtn.onclick = () => {
+          // 배열에 있는 요소들 변환 시작
+          const elementsToProcess = selectedElements.map(item => item.element);
+          processElements(elementsToProcess);
+        };
+        document.body.appendChild(floatingBtn);
+      }
+      floatingBtn.innerHTML = `<span>🚀</span><span>선택된 ${selectedElements.length}개 요소 변환하기</span>`;
+    } else {
+      if (floatingBtn) {
+        floatingBtn.remove();
+        floatingBtn = null;
+      }
+    }
+  }
+
+  function mouseDownHandler(e) {
+    // 요소 선택 모드 중에는 텍스트 블록 지정(드래그)을 방지합니다.
+    e.preventDefault();
+  }
+
+  function stopSelection(fullyCancel) {
+    document.removeEventListener("mousemove", mouseMoveHandler);
+    document.removeEventListener("click", clickHandler, true);
+    document.removeEventListener("mousedown", mouseDownHandler, true);
+    document.removeEventListener("keydown", escapeHandler);
+    
+    // 호버링 중이던 요소 복구
+    if (highlightedElement && !isElementSelected(highlightedElement)) {
+      highlightedElement.style.outline = originalOutline;
+      highlightedElement.style.backgroundColor = originalBackgroundColor;
+      highlightedElement = null;
+    }
+    
+    // 다중 선택된 요소들 복구
+    if (fullyCancel) {
+      selectedElements.forEach(item => {
+        item.element.style.outline = item.originalOutline;
+        item.element.style.backgroundColor = item.originalBackgroundColor;
+      });
+      selectedElements = [];
+      updateFloatingButton();
+      window.hasInjectedElementSelector = false;
+    }
+  }
+
+  function startSelection() {
+    window.hasInjectedElementSelector = true;
+    document.addEventListener("mousemove", mouseMoveHandler);
+    document.addEventListener("click", clickHandler, true);
+    document.addEventListener("mousedown", mouseDownHandler, true);
+    document.addEventListener("keydown", escapeHandler);
+  }
+
+  function escapeHandler(e) {
+    if (e.key === "Escape") {
+      stopSelection(true);
+    }
+  }
+
+  function isElementSelected(el) {
+    return selectedElements.some(item => item.element === el);
+  }
+
   // 마우스 이동 시 하이라이트 효과 적용
   function mouseMoveHandler(e) {
-    if (highlightedElement) {
-      // 원래 스타일로 복원
+    if (highlightedElement && !isElementSelected(highlightedElement)) {
       highlightedElement.style.outline = originalOutline;
       highlightedElement.style.backgroundColor = originalBackgroundColor;
     }
+    
     highlightedElement = e.target;
-    // 요소의 원래 스타일 저장
+    
+    if (isElementSelected(highlightedElement)) {
+      return; // 이미 다중 선택된 요소 위를 지날 때는 스타일 유지
+    }
+    
     originalOutline = highlightedElement.style.outline;
     originalBackgroundColor = highlightedElement.style.backgroundColor;
 
-    // 하이라이트 적용
     highlightedElement.style.outline = "2px solid #e74c3c";
     highlightedElement.style.backgroundColor = "rgba(231, 76, 60, 0.1)";
   }
 
   // 클릭 시 요소 추출 및 변환
   function clickHandler(e) {
-    // 기존 페이지의 클릭 이벤트 무시
     e.preventDefault();
     e.stopPropagation();
 
-    // 이벤트 리스너 제거 및 하이라이트 초기화
-    document.removeEventListener("mousemove", mouseMoveHandler);
-    document.removeEventListener("click", clickHandler, true);
-    if (highlightedElement) {
-      // 원래 스타일로 복원
-      highlightedElement.style.outline = originalOutline;
-      highlightedElement.style.backgroundColor = originalBackgroundColor;
+    const clickedEl = e.target;
+
+    // 다중 선택 토글 (Shift 키)
+    if (e.shiftKey) {
+      const existingIndex = selectedElements.findIndex(item => item.element === clickedEl);
+      if (existingIndex > -1) {
+        // 이미 선택된 요소를 다시 클릭하면 선택 해제
+        clickedEl.style.outline = selectedElements[existingIndex].originalOutline;
+        clickedEl.style.backgroundColor = selectedElements[existingIndex].originalBackgroundColor;
+        selectedElements.splice(existingIndex, 1);
+      } else {
+        // 새로 선택
+        selectedElements.push({
+          element: clickedEl,
+          originalOutline: originalOutline,
+          originalBackgroundColor: originalBackgroundColor
+        });
+        // 선택 완료 스타일 적용 (파란색 테두리)
+        clickedEl.style.outline = "3px solid #0078D7";
+        clickedEl.style.backgroundColor = "rgba(0, 120, 215, 0.15)";
+      }
+      updateFloatingButton();
+      return; // 다중 선택 시에는 여기서 이벤트를 끝냄
     }
 
-    // 1. 선택한 요소의 HTML 가져오기
-    const htmlContent = e.target.outerHTML;
+    // Shift 키를 누르지 않았을 때
+    if (selectedElements.length > 0) {
+      // 다중 선택 중이었는데 Shift 없이 마지막 요소를 클릭한 경우
+      if (!isElementSelected(clickedEl)) {
+        selectedElements.push({
+          element: clickedEl,
+          originalOutline: originalOutline,
+          originalBackgroundColor: originalBackgroundColor
+        });
+        clickedEl.style.outline = "3px solid #0078D7";
+        clickedEl.style.backgroundColor = "rgba(0, 120, 215, 0.15)";
+        updateFloatingButton();
+      }
+      const elementsToProcess = selectedElements.map(item => item.element);
+      processElements(elementsToProcess);
+    } else {
+      // 단일 선택 모드
+      processElements([clickedEl]);
+    }
+  }
+  
+  function processElements(elementsArray) {
+    stopSelection(false); // 요소 선택 로직 일시 중단
+    
+    if (floatingBtn) {
+      floatingBtn.remove();
+      floatingBtn = null;
+    }
+    
+    // 다중 선택 요소들 스타일 복구
+    selectedElements.forEach(item => {
+      item.element.style.outline = item.originalOutline;
+      item.element.style.backgroundColor = item.originalBackgroundColor;
+    });
+    selectedElements = []; // 초기화
+    
+    // 선택된 모든 요소의 HTML을 연결
+    const htmlContent = elementsArray.map(el => el.outerHTML).join('\n\n<hr>\n\n');
 
-    // 2. Turndown을 사용해 HTML을 마크다운으로 변환
     const turndownService = new TurndownService({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
       preformattedCode: true
     });
 
-    // 불필요한 태그 제거 (style, script 등)
     turndownService.remove(['style', 'script', 'noscript']);
 
-    // GFM 플러그인 적용
     const gfm = turndownPluginGfm.gfm;
     turndownService.use(gfm);
 
-    // 코드 블럭 줄바꿈 보존을 위한 강력한 커스텀 룰
     turndownService.addRule('pre-code', {
       filter: ['pre'],
       replacement: function (content, node) {
         const className = (node.firstChild && node.firstChild.className) || node.className || '';
         const language = (className.match(/language-(\S+)/) || [null, ''])[1];
-        // DOMParser 내부 노드 대신 원래 선택한 요소의 textContent/innerText를 반영하기 위해 
-        // node.textContent 사용 (preformattedCode: true 옵션으로 줄바꿈 보존됨)
         return '\n\n```' + language + '\n' + node.textContent.trim() + '\n```\n\n';
       }
     });
 
-    // 상대 경로 링크를 절대 경로로 변환하는 룰
     turndownService.addRule('absolute-links', {
       filter: 'a',
       replacement: function (content, node) {
         let href = node.getAttribute('href');
         if (!href) return content;
-        try {
-          href = new URL(href, window.location.href).href; // 현재 페이지 URL 기준으로 절대 경로 생성
-        } catch (e) { }
+        try { href = new URL(href, window.location.href).href; } catch (e) { }
         const title = node.getAttribute('title');
         const titlePart = title ? ` "${title.replace(/"/g, '\\"')}"` : '';
         return `[${content}](${href}${titlePart})`;
       }
     });
 
-    // 상대 경로 이미지를 절대 경로로 변환하는 룰
     turndownService.addRule('absolute-images', {
       filter: 'img',
       replacement: function (content, node) {
         let src = node.getAttribute('src');
         if (!src) return '';
-        try {
-          src = new URL(src, window.location.href).href; // 현재 페이지 URL 기준으로 절대 경로 생성
-        } catch (e) { }
+        try { src = new URL(src, window.location.href).href; } catch (e) { }
         const alt = node.getAttribute('alt') || '';
         const title = node.getAttribute('title');
         const titlePart = title ? ` "${title.replace(/"/g, '\\"')}"` : '';
@@ -201,10 +339,8 @@ if (!window.hasInjectedElementSelector) {
 
     const markdownContent = turndownService.turndown(htmlContent);
 
-    // 로딩 토스트 표시
     const toast = showLoadingToast();
 
-    // 3. 백그라운드 스크립트로 다운로드 요청 보내기 (콜백 연동)
     chrome.runtime.sendMessage({
       action: "download_md",
       markdown: markdownContent
@@ -213,13 +349,11 @@ if (!window.hasInjectedElementSelector) {
         showPreviewModal(response.markdown, toast);
       } else {
         updateToast(toast, false);
+        window.hasInjectedElementSelector = false; // 오류 시 종료
       }
     });
-
-    window.hasInjectedElementSelector = false;
   }
 
-  // 이벤트 리스너 등록 (캡처링 단계에서 클릭 가로채기)
-  document.addEventListener("mousemove", mouseMoveHandler);
-  document.addEventListener("click", clickHandler, true);
+  // 처음 스크립트가 주입될 때 요소 선택 시작
+  startSelection();
 }
