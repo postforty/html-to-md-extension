@@ -1,5 +1,11 @@
 document.getElementById("start-btn").addEventListener("click", async () => {
   try {
+    const translateEnabled = document.getElementById("translate-chk").checked;
+    const translateMode = document.getElementById("translate-mode").value;
+
+    // 설정값을 저장
+    await chrome.storage.local.set({ translateEnabled, translateMode });
+
     // 현재 활성화된 탭 가져오기
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
@@ -19,5 +25,21 @@ document.getElementById("start-btn").addEventListener("click", async () => {
   } catch (error) {
     console.error("스크립트 주입 실패:", error);
     alert("스크립트 주입에 실패했습니다.");
+  }
+});
+
+// 옵션 페이지 열기 버튼
+document.getElementById("options-btn").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});
+
+// 팝업 열릴 때 이전 설정값 불러오기
+document.addEventListener("DOMContentLoaded", async () => {
+  const result = await chrome.storage.local.get(["translateEnabled", "translateMode"]);
+  if (result.translateEnabled !== undefined) {
+    document.getElementById("translate-chk").checked = result.translateEnabled;
+  }
+  if (result.translateMode !== undefined) {
+    document.getElementById("translate-mode").value = result.translateMode;
   }
 });

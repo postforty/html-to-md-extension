@@ -3,13 +3,27 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { width: 180px; padding: 15px; font-family: sans-serif; text-align: center; }
-    button { padding: 10px; font-size: 14px; cursor: pointer; background: #0078D7; color: white; border: none; border-radius: 5px; width: 100%; }
+    body { width: 200px; padding: 15px; font-family: sans-serif; text-align: center; }
+    button { padding: 10px; font-size: 14px; cursor: pointer; background: #0078D7; color: white; border: none; border-radius: 5px; width: 100%; margin-bottom: 10px; }
     button:hover { background: #005A9E; }
+    .options-container { text-align: left; font-size: 13px; margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px; border: 1px solid #ddd; }
+    .options-container label { display: block; margin-bottom: 8px; cursor: pointer; }
+    .options-container select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
+  <div class="options-container">
+    <label>
+      <input type="checkbox" id="translate-chk" checked>
+      한국어로 번역하기
+    </label>
+    <select id="translate-mode">
+      <option value="only">번역본만 저장</option>
+      <option value="both">원본과 번역본 함께 저장</option>
+    </select>
+  </div>
   <button id="start-btn">요소 선택 시작</button>
+  <button id="options-btn" style="background: #555;">설정 (API Key)</button>
   <script src="popup.js"></script>
 </body>
 </html>
