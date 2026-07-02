@@ -33,6 +33,11 @@ document.getElementById("options-btn").addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
+// 설명서 페이지 열기 버튼
+document.getElementById("guide-btn").addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("guide.html") });
+});
+
 // 팝업 열릴 때 이전 설정값 불러오기
 document.addEventListener("DOMContentLoaded", async () => {
   const result = await chrome.storage.local.get(["translateEnabled", "translateMode"]);

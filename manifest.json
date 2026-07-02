@@ -5,7 +5,19 @@
   "description": "웹 페이지의 요소를 선택해 마크다운 파일로 저장합니다.",
   "permissions": ["activeTab", "scripting", "downloads", "storage"],
   "options_page": "options.html",
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "32": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
     "default_popup": "popup.html"
   },
   "background": {

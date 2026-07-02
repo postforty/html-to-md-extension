@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>HTML to MD Saver 사용 설명서</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; padding: 30px; max-width: 800px; margin: 0 auto; color: #333; }
+    h1 { color: #FF5A00; border-bottom: 2px solid #E65100; padding-bottom: 10px; }
+    h2 { color: #E65100; margin-top: 30px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 10px; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; color: #d63384; font-family: monospace; }
+    .kbd { display: inline-block; padding: 3px 8px; font-size: 14px; font-weight: bold; color: #333; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .feature-box { background: #fff3ed; border-left: 4px solid #FF5A00; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>📖 HTML to MD Saver 사용 설명서</h1>
+  
+  <p>웹 페이지의 원하는 영역을 클릭 한 번으로 깔끔한 마크다운(Markdown) 문서로 변환하고 번역할 수 있는 강력한 도구입니다.</p>
+  
+  <h2>기본 사용법</h2>
+  <ul>
+    <li>브라우저 상단의 퍼즐 아이콘이나 고정된 <strong>HTML to MD Saver</strong> 아이콘을 클릭하여 팝업을 엽니다.</li>
+    <li><strong>[요소 선택 시작]</strong> 버튼을 누릅니다.</li>
+    <li>웹 페이지에서 마우스를 움직여 추출하고 싶은 영역(문단, 이미지, 표 등)에 다크 오렌지색 점선 테두리가 생기면 클릭합니다.</li>
+    <li>자동으로 마크다운 변환(및 번역)이 진행되며 미리보기 창이 뜹니다. <strong>[다운로드]</strong>를 누르면 <code>.md</code> 파일로 저장됩니다.</li>
+  </ul>
+
+  <h2>⌨️ 핵심 단축키 (고급 기능)</h2>
+  <div class="feature-box">
+    <strong><span class="kbd">Shift</span> + 마우스 클릭 (다중 선택)</strong><br>
+    여러 개의 흩어진 문단이나 요소들을 하나의 문서로 스크랩하고 싶을 때 사용합니다.<br>
+    <code>Shift</code> 키를 누른 상태로 요소들을 클릭하면 굵은 오렌지색 실선으로 선택이 고정됩니다. 원하는 요소들을 모두 선택한 후 화면 하단에 나타나는 <strong>[선택된 N개 요소 변환하기]</strong> 버튼을 누르면 한 번에 병합되어 추출됩니다.
+  </div>
+  
+  <div class="feature-box">
+    <strong><span class="kbd">ESC</span> (선택 취소 및 종료)</strong><br>
+    요소 선택 모드를 켰다가 취소하고 싶거나, 다중 선택을 초기화하고 원래 웹 페이지 상태로 돌아가고 싶을 때 언제든지 <code>ESC</code> 키를 누르면 안전하게 종료됩니다.
+  </div>
+
+  <h2>🌐 AI 번역 기능 (Gemini)</h2>
+  <p>확장 프로그램 설정(설정 버튼 클릭) 메뉴에 <strong>Google Gemini API 키</strong>를 등록하면 강력한 AI 번역 기능을 사용할 수 있습니다.</p>
+  <ul>
+    <li><strong>번역본만 저장:</strong> 원본 텍스트 대신 자연스러운 한국어 번역본으로 깔끔하게 대체됩니다.</li>
+    <li><strong>원본과 번역본 함께 저장:</strong> 각 문단별로 한국어 번역본이 먼저 나오고, 바로 아래에 원본 영어 문장이 그대로 유지되어 어학 공부나 원문 대조에 매우 유용합니다.</li>
+  </ul>
+</body>
+</html>

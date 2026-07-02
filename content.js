@@ -17,7 +17,7 @@ if (!window.hasInjectedElementSelector) {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: #0078D7;
+      background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%);
       color: white;
       padding: 12px 20px;
       border-radius: 8px;
@@ -31,7 +31,13 @@ if (!window.hasInjectedElementSelector) {
       align-items: center;
       gap: 10px;
     `;
-    toast.innerHTML = `<span>⏳</span><span>마크다운 추출 및 번역 중...</span>`;
+    toast.innerHTML = `<style>@keyframes md-saver-spin { 100% { transform: rotate(360deg); } }</style>
+      <span style="display:flex;align-items:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: md-saver-spin 1.2s linear infinite;">
+          <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+        </svg>
+      </span>
+      <span>마크다운 추출 및 번역 중...</span>`;
     document.body.appendChild(toast);
     return toast;
   }
@@ -40,8 +46,8 @@ if (!window.hasInjectedElementSelector) {
     if (!toast) return;
     toast.style.background = success ? "#107C10" : "#D13438";
     toast.innerHTML = success 
-      ? `<span>✅</span><span>변환 완료! 파일이 다운로드됩니다.</span>`
-      : `<span>❌</span><span>처리 중 오류가 발생했습니다.</span>`;
+      ? `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span><span>변환 완료! 파일이 다운로드됩니다.</span>`
+      : `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span><span>처리 중 오류가 발생했습니다.</span>`;
     
     setTimeout(() => {
       toast.style.opacity = "0";
@@ -94,7 +100,7 @@ if (!window.hasInjectedElementSelector) {
 
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "다운로드 (Save as .md)";
-    downloadBtn.style.cssText = "padding: 8px 16px; border: none; background: #0078D7; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
+    downloadBtn.style.cssText = "padding: 8px 16px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
     downloadBtn.onclick = () => {
       chrome.runtime.sendMessage({
         action: "execute_download",
@@ -125,7 +131,7 @@ if (!window.hasInjectedElementSelector) {
           bottom: 30px;
           left: 50%;
           transform: translateX(-50%);
-          background: #0078D7;
+          background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%);
           color: white;
           padding: 12px 24px;
           border-radius: 30px;
@@ -146,7 +152,11 @@ if (!window.hasInjectedElementSelector) {
         };
         document.body.appendChild(floatingBtn);
       }
-      floatingBtn.innerHTML = `<span>🚀</span><span>선택된 ${selectedElements.length}개 요소 변환하기</span>`;
+      floatingBtn.innerHTML = `
+        <span style="display:flex;align-items:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+        </span>
+        <span>선택된 ${selectedElements.length}개 요소 변환하기</span>`;
     } else {
       if (floatingBtn) {
         floatingBtn.remove();
@@ -219,8 +229,8 @@ if (!window.hasInjectedElementSelector) {
     originalOutline = highlightedElement.style.outline;
     originalBackgroundColor = highlightedElement.style.backgroundColor;
 
-    highlightedElement.style.outline = "2px solid #e74c3c";
-    highlightedElement.style.backgroundColor = "rgba(231, 76, 60, 0.1)";
+    highlightedElement.style.outline = "2px dashed #E65100";
+    highlightedElement.style.backgroundColor = "rgba(230, 81, 0, 0.1)";
   }
 
   // 클릭 시 요소 추출 및 변환
@@ -245,9 +255,9 @@ if (!window.hasInjectedElementSelector) {
           originalOutline: originalOutline,
           originalBackgroundColor: originalBackgroundColor
         });
-        // 선택 완료 스타일 적용 (파란색 테두리)
-        clickedEl.style.outline = "3px solid #0078D7";
-        clickedEl.style.backgroundColor = "rgba(0, 120, 215, 0.15)";
+        // 선택 완료 스타일 적용 (오렌지 굵은 테두리)
+        clickedEl.style.outline = "3px solid #FF5A00";
+        clickedEl.style.backgroundColor = "rgba(255, 90, 0, 0.15)";
       }
       updateFloatingButton();
       return; // 다중 선택 시에는 여기서 이벤트를 끝냄
@@ -262,8 +272,8 @@ if (!window.hasInjectedElementSelector) {
           originalOutline: originalOutline,
           originalBackgroundColor: originalBackgroundColor
         });
-        clickedEl.style.outline = "3px solid #0078D7";
-        clickedEl.style.backgroundColor = "rgba(0, 120, 215, 0.15)";
+        clickedEl.style.outline = "3px solid #FF5A00";
+        clickedEl.style.backgroundColor = "rgba(255, 90, 0, 0.15)";
         updateFloatingButton();
       }
       const elementsToProcess = selectedElements.map(item => item.element);
