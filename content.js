@@ -83,7 +83,7 @@ if (!window.hasInjectedElementSelector) {
     body.style.cssText = "padding: 20px; flex: 1; overflow-y: auto;";
     
     const textarea = document.createElement("textarea");
-    textarea.style.cssText = "width: 100%; height: 400px; padding: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical;";
+    textarea.style.cssText = "width: 100%; height: 400px; padding: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; color: #333; background-color: #fff; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-appearance: none;";
     textarea.value = markdownText;
     body.appendChild(textarea);
 
