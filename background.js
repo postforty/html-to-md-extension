@@ -58,7 +58,7 @@ ${text}`;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "download_md") { // 실제로는 변환 요청을 의미함
-    handleTranslation(request.markdown)
+    handleTranslation(request.markdown, request.mode)
       .then((finalMarkdown) => {
         sendResponse({ success: true, markdown: finalMarkdown });
       })
@@ -78,17 +78,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-async function handleTranslation(originalMarkdown) {
+async function handleTranslation(originalMarkdown, requestedMode) {
   const localConfig = await chrome.storage.local.get(["translateMode"]);
   const syncConfig = await chrome.storage.sync.get(["geminiApiKey"]);
 
   let finalMarkdown = originalMarkdown;
+  const activeMode = requestedMode || localConfig.translateMode || 'original';
 
-  if (localConfig.translateMode !== 'original') {
+  if (activeMode !== 'original') {
     if (!syncConfig.geminiApiKey) {
       finalMarkdown = `> **번역 알림:** 확장 프로그램 설정에서 Gemini API Key를 입력하셔야 번역 기능이 작동합니다.\n\n${originalMarkdown}`;
     } else {
-      finalMarkdown = await translateMarkdown(originalMarkdown, syncConfig.geminiApiKey, localConfig.translateMode);
+      finalMarkdown = await translateMarkdown(originalMarkdown, syncConfig.geminiApiKey, activeMode);
     }
   }
 
@@ -105,3 +106,62 @@ function executeDownload(markdownText) {
     saveAs: true
   });
 }
+
+// 컨텍스트 메뉴(우클릭 메뉴) 생성
+chrome.runtime.onInstalled.addListener(() => {
+  // 부모 메뉴
+  chrome.contextMenus.create({
+    id: "convertSelectionParent",
+    title: "선택 영역 마크다운 변환",
+    contexts: ["selection"]
+  });
+
+  // 자식 메뉴: 원본만 저장
+  chrome.contextMenus.create({
+    id: "convert_original",
+    parentId: "convertSelectionParent",
+    title: "원본만 저장",
+    contexts: ["selection"]
+  });
+
+  // 자식 메뉴: 번역본만 저장
+  chrome.contextMenus.create({
+    id: "convert_translated",
+    parentId: "convertSelectionParent",
+    title: "번역본만 저장",
+    contexts: ["selection"]
+  });
+
+  // 자식 메뉴: 원본 + 번역본 저장
+  chrome.contextMenus.create({
+    id: "convert_both",
+    parentId: "convertSelectionParent",
+    title: "원본 + 번역본 저장",
+    contexts: ["selection"]
+  });
+});
+
+// 컨텍스트 메뉴 클릭 이벤트 처리
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId.startsWith("convert_")) {
+    if (tab.url.startsWith("chrome://") || tab.url.startsWith("https://chrome.google.com/webstore")) {
+      return;
+    }
+
+    // 메뉴 ID에서 모드 추출 (original, translated, both)
+    const mode = info.menuItemId.replace("convert_", "");
+
+    try {
+      // 1. 의존성 스크립트 및 content.js 주입
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, frameIds: [info.frameId] },
+        files: ["turndown.js", "turndown-plugin-gfm.js", "content.js"]
+      });
+
+      // 2. 현재 탭의 content.js에 선택 영역 변환 명령(모드 포함) 전송
+      chrome.tabs.sendMessage(tab.id, { action: "process_context_selection", mode: mode }, { frameId: info.frameId });
+    } catch (e) {
+      console.error("컨텍스트 메뉴 실행 실패:", e);
+    }
+  }
+});

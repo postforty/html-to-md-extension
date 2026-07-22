@@ -36,8 +36,22 @@ if (!window.hasInjectedElementSelector) {
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: md-saver-spin 1.2s linear infinite;">
           <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
         </svg>
-      </span>
-      <span>마크다운 추출 및 번역 중...</span>`;
+      <span>마크다운 추출 및 번역 중...</span>
+      <span class="cancel-toast-btn" style="display:flex;align-items:center;cursor:pointer;margin-left:10px;opacity:0.8;transition:opacity 0.2s;" title="취소" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </span>`;
+      
+    const cancelBtn = toast.querySelector('.cancel-toast-btn');
+    cancelBtn.onclick = () => {
+      toast.dataset.cancelled = "true";
+      toast.remove();
+      // 다시 선택 모드로 진입 (우클릭 모드가 아닐 경우)
+      if (!window.isContextMenuTriggered && !window.hasStartedSelection) {
+        window.hasStartedSelection = true;
+        startSelection();
+      }
+    };
+    
     document.body.appendChild(toast);
     return toast;
   }
@@ -95,7 +109,9 @@ if (!window.hasInjectedElementSelector) {
     cancelBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
     cancelBtn.onclick = () => {
       modalOverlay.remove();
-      startSelection(); // 다시 요소 선택 모드로 진입
+      if (!window.isContextMenuTriggered) {
+        startSelection(); // 팝업으로 시작한 경우에만 다시 요소 선택 모드로 진입
+      }
     };
 
     const downloadBtn = document.createElement("button");
@@ -107,7 +123,7 @@ if (!window.hasInjectedElementSelector) {
         markdown: textarea.value
       });
       modalOverlay.remove();
-      window.hasInjectedElementSelector = false; // 완전히 종료
+      window.hasStartedSelection = false; // 완전히 종료
     };
 
     footer.appendChild(cancelBtn);
@@ -191,7 +207,7 @@ if (!window.hasInjectedElementSelector) {
       });
       selectedElements = [];
       updateFloatingButton();
-      window.hasInjectedElementSelector = false;
+      window.hasStartedSelection = false;
     }
   }
 
@@ -299,9 +315,11 @@ if (!window.hasInjectedElementSelector) {
     });
     selectedElements = []; // 초기화
     
-    // 선택된 모든 요소의 HTML을 연결
     const htmlContent = elementsArray.map(el => el.outerHTML).join('\n\n<hr>\n\n');
+    processHTML(htmlContent);
+  }
 
+  function processHTML(htmlContent) {
     const turndownService = new TurndownService({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
@@ -353,17 +371,44 @@ if (!window.hasInjectedElementSelector) {
 
     chrome.runtime.sendMessage({
       action: "download_md",
-      markdown: markdownContent
+      markdown: markdownContent,
+      mode: window.currentTranslateMode // 백그라운드에 일회용 모드 전달
     }, (response) => {
+      if (toast.dataset.cancelled === "true") return; // 사용자가 취소한 경우 응답 무시
+
       if (response && response.markdown) {
         showPreviewModal(response.markdown, toast);
       } else {
         updateToast(toast, false);
-        window.hasInjectedElementSelector = false; // 오류 시 종료
+        window.hasStartedSelection = false; // 오류 시 종료
       }
     });
   }
 
-  // 처음 스크립트가 주입될 때 요소 선택 시작
-  startSelection();
+  // 우클릭 메뉴(Context Menu) 및 팝업으로부터의 메시지 수신
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "process_context_selection") {
+      window.isContextMenuTriggered = true; // 우클릭 메뉴를 통한 실행임을 기록
+      window.currentTranslateMode = request.mode; // 일회용 변환 모드 저장
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const div = document.createElement("div");
+        div.appendChild(range.cloneContents());
+        
+        // 현재 호버 선택 모드 중이라면 끄기
+        stopSelection(true); 
+        
+        processHTML(div.innerHTML);
+      }
+    } else if (request.action === "start_hover_selection") {
+      window.isContextMenuTriggered = false; // 팝업을 통한 실행
+      window.currentTranslateMode = request.mode; // 팝업에서 선택한 일회용 모드 저장
+      if (!window.hasStartedSelection) {
+        window.hasStartedSelection = true;
+        startSelection();
+      }
+    }
+  });
+
 }
