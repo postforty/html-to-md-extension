@@ -92,7 +92,7 @@ if (!window.hasInjectedElementSelector) {
 
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = "취소";
-    cancelBtn.style.cssText = "padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
+    cancelBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
     cancelBtn.onclick = () => {
       modalOverlay.remove();
       startSelection(); // 다시 요소 선택 모드로 진입
@@ -100,7 +100,7 @@ if (!window.hasInjectedElementSelector) {
 
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "다운로드 (Save as .md)";
-    downloadBtn.style.cssText = "padding: 8px 16px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
+    downloadBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
     downloadBtn.onclick = () => {
       chrome.runtime.sendMessage({
         action: "execute_download",

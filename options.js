@@ -13,6 +13,26 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('translateMode').value = result.translateMode;
     }
   });
+
+  // 비밀번호 표시/숨기기 토글
+  const toggleApiKeyBtn = document.getElementById('toggleApiKey');
+  const apiKeyInput = document.getElementById('apiKey');
+  const eyeIconOpen = document.getElementById('eyeIconOpen');
+  const eyeIconClosed = document.getElementById('eyeIconClosed');
+  
+  if (toggleApiKeyBtn && apiKeyInput) {
+    toggleApiKeyBtn.addEventListener('click', () => {
+      if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        if (eyeIconOpen) eyeIconOpen.style.display = 'none';
+        if (eyeIconClosed) eyeIconClosed.style.display = 'block';
+      } else {
+        apiKeyInput.type = 'password';
+        if (eyeIconOpen) eyeIconOpen.style.display = 'block';
+        if (eyeIconClosed) eyeIconClosed.style.display = 'none';
+      }
+    });
+  }
 });
 
 // 설정 저장하기

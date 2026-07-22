@@ -1,10 +1,9 @@
 document.getElementById("start-btn").addEventListener("click", async () => {
   try {
-    const translateEnabled = document.getElementById("translate-chk").checked;
     const translateMode = document.getElementById("translate-mode").value;
 
     // 설정값을 저장
-    await chrome.storage.local.set({ translateEnabled, translateMode });
+    await chrome.storage.local.set({ translateMode });
 
     // 현재 활성화된 탭 가져오기
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -40,10 +39,7 @@ document.getElementById("guide-btn").addEventListener("click", () => {
 
 // 팝업 열릴 때 이전 설정값 불러오기
 document.addEventListener("DOMContentLoaded", async () => {
-  const result = await chrome.storage.local.get(["translateEnabled", "translateMode"]);
-  if (result.translateEnabled !== undefined) {
-    document.getElementById("translate-chk").checked = result.translateEnabled;
-  }
+  const result = await chrome.storage.local.get(["translateMode"]);
   if (result.translateMode !== undefined) {
     document.getElementById("translate-mode").value = result.translateMode;
   }
