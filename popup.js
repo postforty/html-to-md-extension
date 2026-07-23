@@ -11,9 +11,9 @@ document.getElementById("start-btn").addEventListener("click", async () => {
       return;
     }
 
-    // turndown 변환 라이브러리와 선택 로직 스크립트를 현재 탭에 실행
+    // turndown 변환 라이브러리와 선택 로직 스크립트를 현재 탭에 실행 (모든 프레임 포함)
     await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId: tab.id, allFrames: true },
       files: ["turndown.js", "turndown-plugin-gfm.js", "content.js"]
     });
     
