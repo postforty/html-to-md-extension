@@ -39,24 +39,58 @@ ${text}`;
 
   const selectedModel = model || "gemini-3.1-flash-lite";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: promptText }]
-      }]
-    })
-  });
 
-  if (!response.ok) {
-    throw new Error(`Gemini API Error: ${response.status}`);
+  const MAX_RETRIES = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: promptText }]
+          }]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+          return data.candidates[0].content.parts[0].text;
+        }
+        throw new Error("Invalid response format from Gemini API");
+      }
+
+      // 에러 응답 본문 파싱
+      const errorJson = await response.json().catch(() => null);
+      const apiMessage = errorJson && errorJson.error && errorJson.error.message ? errorJson.error.message : response.statusText;
+      const errorStatus = response.status;
+      lastError = new Error(`Gemini API Error (${errorStatus}): ${apiMessage}`);
+
+      // 503(과부하) 또는 429(요청 제한)일 때만 재시도 진행
+      if ((errorStatus === 503 || errorStatus === 429) && attempt < MAX_RETRIES) {
+        console.warn(`Gemini API ${errorStatus} 과부하 감지. ${attempt}차 재시도 대기 중 (${attempt * 1000}ms)...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        continue;
+      }
+
+      // 다른 상태 코드(400, 401, 403 등)는 즉시 예외 발생
+      throw lastError;
+    } catch (err) {
+      lastError = err;
+      if (attempt === MAX_RETRIES) {
+        throw lastError;
+      }
+      // 네트워크 단절 등 fetch 자체 실패 시 1초 대기 후 재시도
+      await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+    }
   }
 
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  throw lastError || new Error("Unknown error during Gemini translation");
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

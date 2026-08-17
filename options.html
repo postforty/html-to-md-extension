@@ -115,6 +115,27 @@
       transform: translateY(1px);
     }
 
+    #resetBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #f1f3f5;
+      color: #495057;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    #resetBtn:hover {
+      background: #e9ecef;
+      color: #212529;
+      border-color: #adb5bd;
+    }
+
     #status {
       margin-top: 15px;
       color: #107C10;
@@ -172,7 +193,10 @@
     </select>
   </div>
 
-  <button id="saveBtn" data-i18n="saveBtn">저장하기</button>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <button id="saveBtn" data-i18n="saveBtn">저장하기</button>
+    <button id="resetBtn" type="button" data-i18n="resetBtn">기본값 초기화</button>
+  </div>
   <div id="status"></div>
   <script src="i18n.js"></script>
   <script src="options.js"></script>

@@ -91,3 +91,41 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     });
   });
 });
+
+// 기본값 초기화하기
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  const activeLang = await I18N.getEffectiveLanguage();
+  const confirmMsg = I18N.t('resetConfirm', [], activeLang);
+  
+  if (!confirm(confirmMsg)) return;
+
+  const defaultModel = 'gemini-3.1-flash-lite';
+  const defaultMode = 'original';
+  const defaultLang = 'auto';
+
+  // 폼 UI 기본값으로 복원
+  document.getElementById('geminiModel').value = defaultModel;
+  document.getElementById('translateMode').value = defaultMode;
+  document.getElementById('uiLanguage').value = defaultLang;
+
+  // 스토리지에 기본값 저장 (API 키는 보존)
+  chrome.storage.sync.set({
+    geminiModel: defaultModel,
+    uiLanguage: defaultLang
+  }, () => {
+    chrome.storage.local.set({ translateMode: defaultMode }, async () => {
+      try {
+        chrome.runtime.sendMessage({ action: "update_context_menus" });
+      } catch (e) {}
+
+      const newLang = await I18N.getEffectiveLanguage();
+      I18N.applyI18nToDOM(document, newLang);
+
+      const status = document.getElementById('status');
+      status.textContent = I18N.t('resetSuccess', [], newLang);
+      setTimeout(() => {
+        status.textContent = '';
+      }, 2000);
+    });
+  });
+});

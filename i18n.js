@@ -34,6 +34,9 @@
         langEn: "English",
         saveBtn: "저장하기",
         saveSuccess: "설정이 저장되었습니다.",
+        resetBtn: "기본값 초기화",
+        resetConfirm: "설정을 기본값으로 초기화하시겠습니까? (API 키는 유지됩니다)",
+        resetSuccess: "기본값으로 초기화되었습니다.",
 
         // Content Script UI
         toastProcessing: "마크다운 추출 및 번역 중...",
@@ -86,6 +89,9 @@
         langEn: "English",
         saveBtn: "Save Settings",
         saveSuccess: "Settings saved successfully.",
+        resetBtn: "Reset Defaults",
+        resetConfirm: "Reset settings to defaults? (API Key will be kept)",
+        resetSuccess: "Settings reset to defaults.",
 
         // Content Script UI
         toastProcessing: "Extracting and translating markdown...",

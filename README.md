@@ -1,43 +1,69 @@
-# HTML to MD Saver (크롬 확장 프로그램)
+# HTML to MD Saver (Chrome Extension)
 
-웹 페이지에서 원하는 요소를 마우스로 클릭하거나 드래그하여 해당 영역을 추출해 **마크다운(Markdown, `.md`)** 파일로 즉시 다운로드해 주는 크롬 확장 프로그램입니다.
+**English** | [한국어](README.ko.md)
 
-## ✨ 주요 기능
-- **직관적인 요소 선택:** 확장 프로그램을 실행하고 웹 페이지 위를 마우스로 이동하면 선택될 영역이 시각적으로 하이라이트됩니다.
-- **마우스 영역 드래그 즉시 변환:** 마우스 좌클릭 후 드래그하여 범위를 지정하면, 영역 내 포함된 여러 요소들이 한 번에 캡처되어 **마크다운 미리보기 모달이 즉시 표시**됩니다. 대량의 문서나 리스트를 단 한 번의 드래그로 빠르게 스크랩할 수 있습니다.
-- **개별 다중 선택 지원 (Ctrl + Click):** `Ctrl`(Mac은 `Cmd`) 키를 누른 상태로 개별 요소를 클릭하면 분산된 여러 개의 요소를 동시에 스크랩하여 하나의 파일로 병합할 수 있습니다.
-- **우클릭(드래그) 영역 추출:** 페이지 내 텍스트를 드래그하여 블록을 지정한 후 마우스 우클릭을 통해 원하는 영역만 빠르게 마크다운으로 추출할 수 있습니다. 복사 방지가 적용된 사이트에서도 매우 유용합니다.
-- **미리보기(Preview) 기능:** 파일로 다운로드하기 전, 변환된 마크다운 텍스트를 화면에서 미리 확인하고 검토할 수 있는 모달 창을 제공합니다.
-- **AI 기반 자동 번역:** Gemini API와 연동하여 추출된 마크다운을 한국어로 자동 번역할 수 있습니다.
-- **유연한 번역 모드 선택:** 원본만 저장, 번역본만 저장, 원본+번역본 교차 저장 모드를 지원합니다. 설정 페이지에서 기본값을 영구 저장할 수 있으며, 팝업이나 우클릭 메뉴에서 즉석으로 일회성 모드를 선택할 수도 있습니다.
-- **안전한 취소 모드 (ESC):** 영역 선택 중 언제든 `ESC` 키를 누르면 요소 선택 모드를 즉시 안전하게 종료할 수 있습니다.
-- **GFM(GitHub Flavored Markdown) 완벽 지원:** 표(Table), 취소선 등의 GFM 문법과 코드 블럭(`<pre>`, `<code>`)을 훼손 없이 ` ``` ` 펜스 코드 블럭으로 깔끔하게 유지합니다.
-- **절대 경로 자동 변환:** 상대 경로(`.`, `/`)로 작성된 하이퍼링크와 이미지 주소를 클릭 가능한 절대 경로(Absolute URL)로 자동 변환하여 링크 깨짐을 방지합니다.
+A Chrome extension that allows you to extract web page elements by clicking or dragging, instantly converting them into clean **Markdown (`.md`)** files with instant preview, clipboard copy, and AI-powered translation.
 
-## 🚀 설치 및 사용 방법 (개발자 모드)
+---
 
-1. 이 저장소를 로컬 컴퓨터에 다운로드하거나 `git clone` 합니다.
-2. 크롬 브라우저를 열고 주소창에 `chrome://extensions/`를 입력하여 **확장 프로그램 관리 페이지**로 이동합니다.
-3. 우측 상단의 **'개발자 모드'** 토글 버튼을 켭니다.
-4. 좌측 상단에 나타난 **'압축해제된 확장 프로그램을 로드합니다' (Load unpacked)** 버튼을 클릭합니다.
-5. 다운로드한 `html-to-md-extension` 폴더를 선택하여 확장 프로그램을 등록합니다.
-6. 마크다운으로 스크랩하고 싶은 웹 페이지로 이동합니다. (단, `chrome://` 내부 페이지나 크롬 웹스토어에서는 보안상 작동하지 않습니다.)
-7. **[방법 1: 요소 선택 모드]** 확장 프로그램 아이콘을 눌러 **[요소 선택 시작]**을 클릭한 뒤 화면에서 원하는 영역을 클릭합니다.
-8. **[방법 2: 우클릭 드래그 모드]** 웹 페이지의 텍스트를 드래그한 뒤 마우스 우클릭을 하여 **[선택 영역 마크다운 변환]** 메뉴 중 원하는 모드를 클릭합니다.
-9. 화면에 나타나는 **미리보기(Preview)** 창에서 결과를 확인하고 **[다운로드]** 버튼을 클릭하면 파일이 저장됩니다!
+## ✨ Features
 
-## 📂 프로젝트 구조
-- `manifest.json`: 크롬 확장 프로그램의 설정 파일 (Manifest V3)
-- `popup.html` / `popup.js`: 확장 프로그램 팝업 UI 및 스크립트 주입 로직
-- `options.html` / `options.js`: 환경 설정 페이지 (API 키 및 기본 저장 방식 세팅)
-- `content.js`: 화면 요소/드래그 영역 추출, 하이라이트, 미리보기 UI 및 마크다운 변환 로직
-- `background.js`: 컨텍스트 메뉴(우클릭) 생성 및 다운로드 처리, API 통신 워커
-- `turndown.js`: HTML을 Markdown으로 변환해 주는 핵심 라이브러리
-- `turndown-plugin-gfm.js`: 표(Table) 등의 부가 문법을 지원하는 GFM 확장 라이브러리
+- **🎯 Intuitive Element Selection:** Hover over any web page element to see real-time visual highlighting.
+- **🖱️ Drag-to-Extract Area:** Left-click and drag across any area to capture multiple elements at once, with an **instant Markdown preview modal**.
+- **🧩 Multi-Element Selection (`Ctrl` + Click):** Hold `Ctrl` (or `Cmd` on macOS) while clicking individual elements to scrape and combine scattered elements into a single file.
+- **📑 Right-Click Context Menu Extraction:** Highlight text and right-click to extract selected content directly to Markdown — works seamlessly even on copy-protected pages.
+- **⚡ Instant Preview & Clipboard Copy:** Opens a responsive preview modal in milliseconds with one-click **[Copy to Clipboard]** and **[Download]** actions.
+- **🤖 AI-Powered Auto Translation (Gemini):** Integrated with Google Gemini API for automatic Markdown translation, featuring a live loading spinner.
+- **⚙️ Custom Gemini Model ID:** Specify custom Gemini models (e.g., `gemini-3.5-flash`, `gemini-3.1-pro-preview`) in settings alongside the default `gemini-3.1-flash-lite`.
+- **🔄 Automatic Retry on Server Load (503/429):** Resilient API handling with automatic exponential backoff retries (up to 3 times) for transient server errors.
+- **🔀 Flexible Translation Modes:** Supports Original Only, Translated Only, and Interleaved (Original + Translation) modes.
+- **🌐 Full i18n & Localization:** Built-in support for Korean and English with automatic browser language detection and manual override in settings.
+- **🔄 Reset to Defaults:** Safely reset model, language, and save mode options with one click while preserving your API key.
+- **🛡️ Safe Cancellation (`ESC`):** Press `ESC` at any time during selection mode to cleanly exit.
+- **📝 Full GFM (GitHub Flavored Markdown) Support:** Preserves tables, strikethrough, and code blocks (`<pre>`, `<code>`) cleanly as fenced code blocks (` ``` `).
+- **🔗 Automatic Absolute URL Resolution:** Automatically resolves relative hyperlinks (`.`, `/`) and image paths to absolute, clickable URLs to prevent broken links.
 
-## ⚠️ 한계점 및 주의사항
-- 크롬 확장 프로그램의 보안 특성상 페이지 내부에 삽입된 외부 `<iframe>` (예: 유튜브 영상, 외부 결제창, 소셜 위젯 등) 내부의 요소는 선택하거나 변환할 수 없습니다.
-- 코드를 수정하신 경우 반드시 확장 프로그램 관리 페이지(`chrome://extensions/`)에서 새로고침(↻) 아이콘을 누르고, **테스트 중인 웹 페이지(F5)도 함께 새로고침해야** 수정된 스크립트가 정상적으로 반영됩니다.
+---
 
-## 📄 라이선스
+## 🚀 Installation & Usage (Developer Mode)
+
+1. Download or clone this repository:
+   ```bash
+   git clone https://github.com/postforty/html-to-md-extension.git
+   ```
+2. Open Google Chrome and navigate to `chrome://extensions/`.
+3. Enable **Developer mode** toggle in the top-right corner.
+4. Click the **Load unpacked** button in the top-left corner.
+5. Select the `html-to-md-extension` directory.
+6. Navigate to any web page you want to scrape (Note: Chrome extensions cannot run on internal `chrome://` pages or the Chrome Web Store).
+7. **[Method 1: Element Selection Mode]** Click the extension icon, click **[Start Element Selection]**, and click or drag desired elements on the page.
+8. **[Method 2: Right-Click Drag Mode]** Highlight text on the web page, right-click, and select your preferred conversion mode from the context menu.
+9. Check the result in the **Preview** modal and click **[Copy to Clipboard]** or **[Download]**!
+
+---
+
+## 📂 Project Structure
+
+- `manifest.json`: Chrome extension manifest (Manifest V3, i18n enabled)
+- `_locales/`: Chrome Web Store and standard browser locale definitions (`en`, `ko`)
+- `i18n.js`: Shared runtime internationalization dictionary and storage sync module
+- `popup.html` / `popup.js`: Extension popup UI and script injection logic
+- `options.html` / `options.js`: Settings page (API key, Gemini model, default save mode, UI language, reset)
+- `guide.html` / `guide_en.html`: Korean and English user guides
+- `content.js`: DOM extraction, visual highlighter, interactive modal UI, and Markdown conversion logic
+- `background.js`: Context menu handler, download manager, Gemini API worker with auto-retry
+- `turndown.js`: HTML to Markdown conversion library
+- `turndown-plugin-gfm.js`: Turndown plugin for GitHub Flavored Markdown (tables, etc.)
+
+---
+
+## ⚠️ Limitations & Notes
+
+- Due to browser security restrictions, elements inside cross-origin `<iframe>` tags (e.g., YouTube embeds, external payment widgets, social widgets) cannot be inspected or converted.
+- After modifying source code, remember to reload the extension at `chrome://extensions/` (↻) and **refresh the test webpage (F5)** for changes to take effect.
+
+---
+
+## 📄 License
+
 MIT License
