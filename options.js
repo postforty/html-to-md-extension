@@ -3,11 +3,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. 다국어 DOM 적용
   await I18N.initDOM();
 
-  // 2. API 키 및 UI 언어 설정 불러오기 (sync 스토리지)
-  chrome.storage.sync.get(['geminiApiKey', 'uiLanguage'], (result) => {
+  // 2. API 키, 모델 및 UI 언어 설정 불러오기 (sync 스토리지)
+  chrome.storage.sync.get(['geminiApiKey', 'geminiModel', 'uiLanguage'], (result) => {
     if (result.geminiApiKey) {
       document.getElementById('apiKey').value = result.geminiApiKey;
     }
+    
+    // 모델 설정 복원 (기본값: gemini-3.1-flash-lite)
+    const modelInput = document.getElementById('geminiModel');
+    modelInput.value = result.geminiModel || 'gemini-3.1-flash-lite';
+
+    // UI 언어 복원
     const uiLang = result.uiLanguage || 'auto';
     document.getElementById('uiLanguage').value = uiLang;
   });
@@ -54,12 +60,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 설정 저장하기
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const apiKey = document.getElementById('apiKey').value.trim();
+  const rawModel = document.getElementById('geminiModel').value.trim();
+  const selectedModel = rawModel || 'gemini-3.1-flash-lite';
   const translateMode = document.getElementById('translateMode').value;
   const uiLanguage = document.getElementById('uiLanguage').value;
-  
-  // sync 스토리지: API Key, UI 언어 저장
+
+  // sync 스토리지: API Key, Gemini Model, UI 언어 저장
   // local 스토리지: 기본 저장 방식 저장
-  chrome.storage.sync.set({ geminiApiKey: apiKey, uiLanguage: uiLanguage }, async () => {
+  chrome.storage.sync.set({ 
+    geminiApiKey: apiKey, 
+    geminiModel: selectedModel,
+    uiLanguage: uiLanguage 
+  }, async () => {
     chrome.storage.local.set({ translateMode: translateMode }, async () => {
       // 우클릭 컨텍스트 메뉴 갱신 요청
       try {

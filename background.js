@@ -1,6 +1,6 @@
 importScripts("i18n.js");
 
-async function translateMarkdown(text, apiKey, mode) {
+async function translateMarkdown(text, apiKey, mode, model = "gemini-3.1-flash-lite") {
   let promptText = `Translate the following Markdown content.
 If the content is mostly in English, translate it to Korean.
 If the content is mostly in Korean, translate it to English.
@@ -37,7 +37,8 @@ Markdown to translate:
 ${text}`;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+  const selectedModel = model || "gemini-3.1-flash-lite";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -87,7 +88,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function handleTranslation(originalMarkdown, requestedMode) {
   const localConfig = await chrome.storage.local.get(["translateMode"]);
-  const syncConfig = await chrome.storage.sync.get(["geminiApiKey"]);
+  const syncConfig = await chrome.storage.sync.get(["geminiApiKey", "geminiModel"]);
   const activeLang = await I18N.getEffectiveLanguage();
 
   let finalMarkdown = originalMarkdown;
@@ -97,7 +98,7 @@ async function handleTranslation(originalMarkdown, requestedMode) {
     if (!syncConfig.geminiApiKey) {
       finalMarkdown = `${I18N.t("bgApiKeyNotice", [], activeLang)}${originalMarkdown}`;
     } else {
-      finalMarkdown = await translateMarkdown(originalMarkdown, syncConfig.geminiApiKey, activeMode);
+      finalMarkdown = await translateMarkdown(originalMarkdown, syncConfig.geminiApiKey, activeMode, syncConfig.geminiModel);
     }
   }
 

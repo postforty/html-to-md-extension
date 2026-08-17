@@ -25,117 +25,121 @@ if (!window.hasInjectedElementSelector) {
   let dragBoxEl = null;
   const DRAG_THRESHOLD = 5;
 
-  function showLoadingToast() {
-    const toast = document.createElement("div");
-    toast.id = "md-saver-toast";
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-family: sans-serif;
-      font-size: 14px;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 9999999;
-      transition: opacity 0.3s ease-in-out;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    `;
-    toast.innerHTML = `<style>@keyframes md-saver-spin { 100% { transform: rotate(360deg); } }</style>
-      <span style="display:flex;align-items:center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: md-saver-spin 1.2s linear infinite;">
-          <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-        </svg>
-      </span>
-      <span>${typeof I18N !== "undefined" ? I18N.t("toastProcessing", [], currentLang) : "마크다운 추출 및 번역 중..."}</span>
-      <span class="cancel-toast-btn" style="display:flex;align-items:center;cursor:pointer;margin-left:10px;opacity:0.8;transition:opacity 0.2s;" title="${typeof I18N !== "undefined" ? I18N.t("toastCancelTitle", [], currentLang) : "취소"}" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </span>`;
-      
-    const cancelBtn = toast.querySelector('.cancel-toast-btn');
-    cancelBtn.onclick = () => {
-      toast.dataset.cancelled = "true";
-      toast.remove();
-      // 다시 선택 모드로 진입 (우클릭 모드가 아닐 경우)
-      if (!window.isContextMenuTriggered && !window.hasStartedSelection) {
-        window.hasStartedSelection = true;
-        startSelection();
-      }
-    };
-    
-    document.body.appendChild(toast);
-    return toast;
-  }
 
-  function updateToast(toast, success) {
-    if (!toast) return;
-    toast.style.background = success ? "#107C10" : "#D13438";
-    const successMsg = typeof I18N !== "undefined" ? I18N.t("toastSuccess", [], currentLang) : "변환 완료! 파일이 다운로드됩니다.";
-    const errorMsg = typeof I18N !== "undefined" ? I18N.t("toastError", [], currentLang) : "처리 중 오류가 발생했습니다.";
-    toast.innerHTML = success 
-      ? `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span><span>${successMsg}</span>`
-      : `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span><span>${errorMsg}</span>`;
-    
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      setTimeout(() => toast.remove(), 300);
-    }, 2500);
-  }
 
-  function showPreviewModal(markdownText, loadingToast) {
-    if (loadingToast) {
-      loadingToast.remove();
-    }
-
+  function showPreviewModal(markdownText, isTranslating = false, onCancel = null) {
     const modalOverlay = document.createElement("div");
     modalOverlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.6); z-index: 9999998;
       display: flex; justify-content: center; align-items: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     `;
 
     const modalBox = document.createElement("div");
     modalBox.style.cssText = `
-      background: white; width: 80%; max-width: 800px; max-height: 85vh;
-      border-radius: 10px; display: flex; flex-direction: column;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-family: sans-serif;
-      overflow: hidden;
+      background: white; width: 85%; max-width: 800px; max-height: 85vh;
+      border-radius: 12px; display: flex; flex-direction: column;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.3); font-family: inherit;
+      overflow: hidden; animation: md-saver-fadein 0.2s ease-out;
     `;
 
     const header = document.createElement("div");
-    header.style.cssText = "padding: 15px 20px; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold; font-size: 16px; color: #333;";
-    header.textContent = typeof I18N !== "undefined" ? I18N.t("previewHeader", [], currentLang) : "마크다운 미리보기 (Preview)";
+    header.style.cssText = "padding: 16px 22px; border-bottom: 1px solid #eee; background: #fafafa; font-weight: bold; font-size: 16px; color: #222; display: flex; align-items: center; justify-content: space-between;";
+    header.innerHTML = `
+      <span style="display:flex;align-items:center;gap:8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        ${typeof I18N !== "undefined" ? I18N.t("previewHeader", [], currentLang) : "마크다운 미리보기 (Preview)"}
+      </span>
+    `;
 
     const body = document.createElement("div");
-    body.style.cssText = "padding: 20px; flex: 1; overflow-y: auto;";
+    body.style.cssText = "padding: 20px; flex: 1; overflow-y: auto; position: relative;";
     
     const textarea = document.createElement("textarea");
-    textarea.style.cssText = "width: 100%; height: 400px; padding: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; color: #333; background-color: #fff; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-appearance: none;";
+    textarea.style.cssText = "width: 100%; height: 420px; padding: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-family: monospace; font-size: 14px; line-height: 1.5; resize: vertical; color: #333; background-color: #fdfdfd; -webkit-font-smoothing: antialiased;";
     textarea.value = markdownText;
     body.appendChild(textarea);
 
+    // 번역 중일 때 표시할 실시간 로딩 오버레이
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.style.cssText = `
+      position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(4px);
+      border-radius: 6px;
+      display: ${isTranslating ? "flex" : "none"};
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    `;
+    loadingOverlay.innerHTML = `
+      <style>
+        @keyframes md-modal-spin { 100% { transform: rotate(360deg); } }
+      </style>
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, rgba(255,90,0,0.15), rgba(230,81,0,0.05)); display: flex; align-items: center; justify-content: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation: md-modal-spin 1.2s linear infinite;">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+      </div>
+      <div style="font-weight: 600; font-size: 15px; color: #222;">
+        ${typeof I18N !== "undefined" ? I18N.t("modalTranslating", [], currentLang) : "Gemini AI가 마크다운을 번역 중입니다..."}
+      </div>
+      <div style="font-size: 13px; color: #777;">
+        ${typeof I18N !== "undefined" ? I18N.t("modalTranslatingSub", [], currentLang) : "잠시만 기다려주세요."}
+      </div>
+    `;
+    body.appendChild(loadingOverlay);
+
     const footer = document.createElement("div");
-    footer.style.cssText = "padding: 15px 20px; border-top: 1px solid #ddd; background: #f8f9fa; display: flex; justify-content: flex-end; gap: 10px;";
+    footer.style.cssText = "padding: 15px 22px; border-top: 1px solid #eee; background: #fafafa; display: flex; justify-content: flex-end; gap: 10px;";
 
     const cancelBtn = document.createElement("button");
     cancelBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnCancel", [], currentLang) : "취소";
-    cancelBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
+    cancelBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 38px; box-sizing: border-box; padding: 0 18px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer; color: #444; font-size: 14px; font-weight: 500; transition: background 0.2s;";
+    cancelBtn.onmouseover = () => { cancelBtn.style.background = "#f0f0f0"; };
+    cancelBtn.onmouseout = () => { cancelBtn.style.background = "white"; };
     cancelBtn.onclick = () => {
+      if (onCancel) onCancel();
       modalOverlay.remove();
       if (!window.isContextMenuTriggered) {
         startSelection(); // 팝업으로 시작한 경우에만 다시 요소 선택 모드로 진입
       }
     };
 
+    // 클립보드 복사 버튼
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnCopy", [], currentLang) : "클립보드 복사";
+    copyBtn.style.cssText = `display: inline-flex; align-items: center; justify-content: center; height: 38px; box-sizing: border-box; padding: 0 18px; border: 1px solid #ccc; background: white; border-radius: 6px; font-size: 14px; font-weight: 500; color: #333; transition: all 0.2s; ${isTranslating ? "opacity: 0.5; cursor: not-allowed;" : "cursor: pointer;"}`;
+    copyBtn.disabled = isTranslating;
+    copyBtn.onclick = async () => {
+      if (copyBtn.disabled) return;
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnCopied", [], currentLang) : "복사 완료!";
+        copyBtn.style.borderColor = "#107C10";
+        copyBtn.style.color = "#107C10";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.style.borderColor = "#ccc";
+          copyBtn.style.color = "#333";
+        }, 1800);
+      } catch (err) {
+        console.error("클립보드 복사 실패:", err);
+      }
+    };
+
+    // 다운로드 버튼
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnDownload", [], currentLang) : "다운로드 (Save as .md)";
-    downloadBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
+    downloadBtn.style.cssText = `display: inline-flex; align-items: center; justify-content: center; height: 38px; box-sizing: border-box; padding: 0 20px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 6px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 6px rgba(230,81,0,0.2); transition: all 0.2s; ${isTranslating ? "opacity: 0.5; cursor: not-allowed;" : "cursor: pointer;"}`;
+    downloadBtn.disabled = isTranslating;
     downloadBtn.onclick = () => {
+      if (downloadBtn.disabled) return;
       chrome.runtime.sendMessage({
         action: "execute_download",
         markdown: textarea.value
@@ -145,6 +149,7 @@ if (!window.hasInjectedElementSelector) {
     };
 
     footer.appendChild(cancelBtn);
+    footer.appendChild(copyBtn);
     footer.appendChild(downloadBtn);
 
     modalBox.appendChild(header);
@@ -153,6 +158,24 @@ if (!window.hasInjectedElementSelector) {
     modalOverlay.appendChild(modalBox);
 
     document.body.appendChild(modalOverlay);
+
+    // 외부에서 모달 내용 갱신 및 로딩 해제할 수 있는 컨트롤러 반환
+    return {
+      modalOverlay,
+      updateContent(newMarkdown) {
+        loadingOverlay.style.opacity = "0";
+        setTimeout(() => {
+          loadingOverlay.style.display = "none";
+        }, 300);
+        textarea.value = newMarkdown;
+        copyBtn.disabled = false;
+        copyBtn.style.opacity = "1";
+        copyBtn.style.cursor = "pointer";
+        downloadBtn.disabled = false;
+        downloadBtn.style.opacity = "1";
+        downloadBtn.style.cursor = "pointer";
+      }
+    };
   }
 
   // 플로팅 버튼 제어 로직
@@ -522,7 +545,7 @@ if (!window.hasInjectedElementSelector) {
     processHTML(htmlContent);
   }
 
-  function processHTML(htmlContent) {
+  async function processHTML(htmlContent) {
     const turndownService = new TurndownService({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
@@ -570,22 +593,36 @@ if (!window.hasInjectedElementSelector) {
 
     const markdownContent = turndownService.turndown(htmlContent);
 
-    const toast = showLoadingToast();
+    // 저장된 설정 및 일회용 모드 확인
+    const localConfig = await chrome.storage.local.get(["translateMode"]);
+    const activeMode = window.currentTranslateMode || localConfig.translateMode || 'original';
+    const isTranslating = activeMode !== 'original';
 
-    chrome.runtime.sendMessage({
-      action: "download_md",
-      markdown: markdownContent,
-      mode: window.currentTranslateMode // 백그라운드에 일회용 모드 전달
-    }, (response) => {
-      if (toast.dataset.cancelled === "true") return; // 사용자가 취소한 경우 응답 무시
+    let isCancelled = false;
 
-      if (response && response.markdown) {
-        showPreviewModal(response.markdown, toast);
-      } else {
-        updateToast(toast, false);
-        window.hasStartedSelection = false; // 오류 시 종료
-      }
-    });
+    // 즉시 미리보기 모달 오픈 (0.01초 만에 화면에 모달 표시)
+    const modalController = showPreviewModal(
+      isTranslating ? "" : markdownContent, 
+      isTranslating, 
+      () => { isCancelled = true; }
+    );
+
+    // 번역 모드인 경우 백그라운드 번역 요청 후 완료 시 모달 갱신
+    if (isTranslating) {
+      chrome.runtime.sendMessage({
+        action: "download_md",
+        markdown: markdownContent,
+        mode: activeMode
+      }, (response) => {
+        if (isCancelled) return;
+
+        if (response && response.markdown) {
+          modalController.updateContent(response.markdown);
+        } else {
+          modalController.updateContent(markdownContent); // 오류 발생 시 원본 마크다운 표시
+        }
+      });
+    }
   }
 
   // 우클릭 메뉴(Context Menu) 및 팝업으로부터의 메시지 수신
