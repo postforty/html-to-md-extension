@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "HTML to MD Saver",
+  "default_locale": "ko",
+  "name": "__MSG_extName__",
   "version": "1.1",
-  "description": "웹 페이지의 요소를 선택해 마크다운 파일로 저장합니다.",
+  "description": "__MSG_extDescription__",
   "permissions": ["activeTab", "scripting", "downloads", "storage", "contextMenus"],
   "options_page": "options.html",
   "icons": {

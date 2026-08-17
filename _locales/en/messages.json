@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "HTML to MD Saver",
+    "description": "The name of the extension"
+  },
+  "extDescription": {
+    "message": "Select and save web page elements as Markdown files.",
+    "description": "The description of the extension"
+  }
+}

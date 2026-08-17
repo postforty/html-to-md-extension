@@ -10,6 +10,12 @@ if (!window.hasInjectedElementSelector) {
   let selectedElements = []; 
   let floatingBtn = null;
 
+  // 다국어 상태 관리
+  let currentLang = "ko";
+  if (typeof I18N !== "undefined") {
+    I18N.getEffectiveLanguage().then(lang => { currentLang = lang; });
+  }
+
   // 드래그 영역 선택 상태 관리
   let isMouseDown = false;
   let isDragging = false;
@@ -46,8 +52,8 @@ if (!window.hasInjectedElementSelector) {
           <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
         </svg>
       </span>
-      <span>마크다운 추출 및 번역 중...</span>
-      <span class="cancel-toast-btn" style="display:flex;align-items:center;cursor:pointer;margin-left:10px;opacity:0.8;transition:opacity 0.2s;" title="취소" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+      <span>${typeof I18N !== "undefined" ? I18N.t("toastProcessing", [], currentLang) : "마크다운 추출 및 번역 중..."}</span>
+      <span class="cancel-toast-btn" style="display:flex;align-items:center;cursor:pointer;margin-left:10px;opacity:0.8;transition:opacity 0.2s;" title="${typeof I18N !== "undefined" ? I18N.t("toastCancelTitle", [], currentLang) : "취소"}" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </span>`;
       
@@ -69,9 +75,11 @@ if (!window.hasInjectedElementSelector) {
   function updateToast(toast, success) {
     if (!toast) return;
     toast.style.background = success ? "#107C10" : "#D13438";
+    const successMsg = typeof I18N !== "undefined" ? I18N.t("toastSuccess", [], currentLang) : "변환 완료! 파일이 다운로드됩니다.";
+    const errorMsg = typeof I18N !== "undefined" ? I18N.t("toastError", [], currentLang) : "처리 중 오류가 발생했습니다.";
     toast.innerHTML = success 
-      ? `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span><span>변환 완료! 파일이 다운로드됩니다.</span>`
-      : `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span><span>처리 중 오류가 발생했습니다.</span>`;
+      ? `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span><span>${successMsg}</span>`
+      : `<span style="display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span><span>${errorMsg}</span>`;
     
     setTimeout(() => {
       toast.style.opacity = "0";
@@ -101,7 +109,7 @@ if (!window.hasInjectedElementSelector) {
 
     const header = document.createElement("div");
     header.style.cssText = "padding: 15px 20px; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold; font-size: 16px; color: #333;";
-    header.textContent = "마크다운 미리보기 (Preview)";
+    header.textContent = typeof I18N !== "undefined" ? I18N.t("previewHeader", [], currentLang) : "마크다운 미리보기 (Preview)";
 
     const body = document.createElement("div");
     body.style.cssText = "padding: 20px; flex: 1; overflow-y: auto;";
@@ -115,7 +123,7 @@ if (!window.hasInjectedElementSelector) {
     footer.style.cssText = "padding: 15px 20px; border-top: 1px solid #ddd; background: #f8f9fa; display: flex; justify-content: flex-end; gap: 10px;";
 
     const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "취소";
+    cancelBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnCancel", [], currentLang) : "취소";
     cancelBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; color: #333;";
     cancelBtn.onclick = () => {
       modalOverlay.remove();
@@ -125,7 +133,7 @@ if (!window.hasInjectedElementSelector) {
     };
 
     const downloadBtn = document.createElement("button");
-    downloadBtn.textContent = "다운로드 (Save as .md)";
+    downloadBtn.textContent = typeof I18N !== "undefined" ? I18N.t("btnDownload", [], currentLang) : "다운로드 (Save as .md)";
     downloadBtn.style.cssText = "display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box; padding: 0 16px; border: none; background: linear-gradient(135deg, #FF5A00 0%, #E65100 100%); color: white; border-radius: 4px; cursor: pointer; font-weight: bold;";
     downloadBtn.onclick = () => {
       chrome.runtime.sendMessage({
@@ -178,11 +186,14 @@ if (!window.hasInjectedElementSelector) {
         };
         document.body.appendChild(floatingBtn);
       }
+      const floatingText = typeof I18N !== "undefined" 
+        ? I18N.t("floatingBtn", [selectedElements.length.toString()], currentLang)
+        : `선택된 ${selectedElements.length}개 요소 변환하기`;
       floatingBtn.innerHTML = `
         <span style="display:flex;align-items:center;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
         </span>
-        <span>선택된 ${selectedElements.length}개 요소 변환하기</span>`;
+        <span>${floatingText}</span>`;
     } else {
       if (floatingBtn) {
         floatingBtn.remove();
@@ -579,6 +590,10 @@ if (!window.hasInjectedElementSelector) {
 
   // 우클릭 메뉴(Context Menu) 및 팝업으로부터의 메시지 수신
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (typeof I18N !== "undefined") {
+      I18N.getEffectiveLanguage().then(lang => { currentLang = lang; });
+    }
+
     if (request.action === "process_context_selection") {
       window.isContextMenuTriggered = true; // 우클릭 메뉴를 통한 실행임을 기록
       window.currentTranslateMode = request.mode; // 일회용 변환 모드 저장

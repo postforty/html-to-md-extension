@@ -1,3 +1,5 @@
+importScripts("i18n.js");
+
 async function translateMarkdown(text, apiKey, mode) {
   let promptText = `Translate the following Markdown content.
 If the content is mostly in English, translate it to Korean.
@@ -62,11 +64,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then((finalMarkdown) => {
         sendResponse({ success: true, markdown: finalMarkdown });
       })
-      .catch(error => {
+      .catch(async (error) => {
         console.error("Translation Error:", error);
+        const lang = await I18N.getEffectiveLanguage();
         sendResponse({
           success: false,
-          markdown: `> **오류 발생:** 처리 중 문제가 발생했습니다. (${error.message})\n\n${request.markdown}`
+          markdown: `${I18N.t("bgErrorNotice", [error.message], lang)}${request.markdown}`
         });
       });
 
@@ -76,18 +79,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "execute_download") {
     executeDownload(request.markdown);
   }
+
+  if (request.action === "update_context_menus") {
+    createContextMenus();
+  }
 });
 
 async function handleTranslation(originalMarkdown, requestedMode) {
   const localConfig = await chrome.storage.local.get(["translateMode"]);
   const syncConfig = await chrome.storage.sync.get(["geminiApiKey"]);
+  const activeLang = await I18N.getEffectiveLanguage();
 
   let finalMarkdown = originalMarkdown;
   const activeMode = requestedMode || localConfig.translateMode || 'original';
 
   if (activeMode !== 'original') {
     if (!syncConfig.geminiApiKey) {
-      finalMarkdown = `> **번역 알림:** 확장 프로그램 설정에서 Gemini API Key를 입력하셔야 번역 기능이 작동합니다.\n\n${originalMarkdown}`;
+      finalMarkdown = `${I18N.t("bgApiKeyNotice", [], activeLang)}${originalMarkdown}`;
     } else {
       finalMarkdown = await translateMarkdown(originalMarkdown, syncConfig.geminiApiKey, activeMode);
     }
@@ -107,38 +115,52 @@ function executeDownload(markdownText) {
   });
 }
 
-// 컨텍스트 메뉴(우클릭 메뉴) 생성
+// 컨텍스트 메뉴(우클릭 메뉴) 생성 및 언어 동기화
+async function createContextMenus() {
+  const lang = await I18N.getEffectiveLanguage();
+
+  chrome.contextMenus.removeAll(() => {
+    // 부모 메뉴
+    chrome.contextMenus.create({
+      id: "convertSelectionParent",
+      title: I18N.t("contextMenuParent", [], lang),
+      contexts: ["selection"]
+    });
+
+    // 자식 메뉴: 원본만 저장
+    chrome.contextMenus.create({
+      id: "convert_original",
+      parentId: "convertSelectionParent",
+      title: I18N.t("contextMenuOriginal", [], lang),
+      contexts: ["selection"]
+    });
+
+    // 자식 메뉴: 번역본만 저장
+    chrome.contextMenus.create({
+      id: "convert_translated",
+      parentId: "convertSelectionParent",
+      title: I18N.t("contextMenuTranslated", [], lang),
+      contexts: ["selection"]
+    });
+
+    // 자식 메뉴: 원본 + 번역본 저장
+    chrome.contextMenus.create({
+      id: "convert_both",
+      parentId: "convertSelectionParent",
+      title: I18N.t("contextMenuBoth", [], lang),
+      contexts: ["selection"]
+    });
+  });
+}
+
+// 설치 시 초기 메뉴 생성
 chrome.runtime.onInstalled.addListener(() => {
-  // 부모 메뉴
-  chrome.contextMenus.create({
-    id: "convertSelectionParent",
-    title: "선택 영역 마크다운 변환",
-    contexts: ["selection"]
-  });
+  createContextMenus();
+});
 
-  // 자식 메뉴: 원본만 저장
-  chrome.contextMenus.create({
-    id: "convert_original",
-    parentId: "convertSelectionParent",
-    title: "원본만 저장",
-    contexts: ["selection"]
-  });
-
-  // 자식 메뉴: 번역본만 저장
-  chrome.contextMenus.create({
-    id: "convert_translated",
-    parentId: "convertSelectionParent",
-    title: "번역본만 저장",
-    contexts: ["selection"]
-  });
-
-  // 자식 메뉴: 원본 + 번역본 저장
-  chrome.contextMenus.create({
-    id: "convert_both",
-    parentId: "convertSelectionParent",
-    title: "원본 + 번역본 저장",
-    contexts: ["selection"]
-  });
+// 시작 시 메뉴 생성
+chrome.runtime.onStartup.addListener(() => {
+  createContextMenus();
 });
 
 // 컨텍스트 메뉴 클릭 이벤트 처리
@@ -155,7 +177,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       // 1. 의존성 스크립트 및 content.js 주입
       await chrome.scripting.executeScript({
         target: { tabId: tab.id, frameIds: [info.frameId] },
-        files: ["turndown.js", "turndown-plugin-gfm.js", "content.js"]
+        files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
       });
 
       // 2. 현재 탭의 content.js에 선택 영역 변환 명령(모드 포함) 전송
