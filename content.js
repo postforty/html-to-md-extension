@@ -448,8 +448,8 @@ if (!window.hasInjectedElementSelector) {
 
     const clickedEl = e.target;
 
-    // 다중 선택 토글 (Shift 키)
-    if (e.shiftKey) {
+    // 다중 선택 토글 (Ctrl 또는 Mac Cmd 키)
+    if (e.ctrlKey || e.metaKey) {
       const existingIndex = selectedElements.findIndex(item => item.element === clickedEl);
       if (existingIndex > -1) {
         // 이미 선택된 요소를 다시 클릭하면 선택 해제
@@ -471,9 +471,9 @@ if (!window.hasInjectedElementSelector) {
       return; // 다중 선택 시에는 여기서 이벤트를 끝냄
     }
 
-    // Shift 키를 누르지 않았을 때
+    // Ctrl/Cmd 키를 누르지 않았을 때
     if (selectedElements.length > 0) {
-      // 다중 선택 중이었는데 Shift 없이 마지막 요소를 클릭한 경우
+      // 다중 선택 중이었는데 Ctrl 없이 마지막 요소를 클릭한 경우
       if (!isElementSelected(clickedEl)) {
         selectedElements.push({
           element: clickedEl,
