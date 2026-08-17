@@ -1,5 +1,5 @@
 ---
-name: Coding Guidelines
+name: coding-guidelines
 description: Mandatory behavioral guidelines that MUST be applied when writing, modifying, refactoring, or reviewing code. Applies globally to all source code editing across all programming languages. However, DO NOT use these guidelines for pure documentation tasks, such as writing Markdown, technical documents, or proposals.
 ---
 

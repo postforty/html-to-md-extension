@@ -10,6 +10,15 @@ if (!window.hasInjectedElementSelector) {
   let selectedElements = []; 
   let floatingBtn = null;
 
+  // 드래그 영역 선택 상태 관리
+  let isMouseDown = false;
+  let isDragging = false;
+  let justFinishedDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragBoxEl = null;
+  const DRAG_THRESHOLD = 5;
+
   function showLoadingToast() {
     const toast = document.createElement("div");
     toast.id = "md-saver-toast";
@@ -36,6 +45,7 @@ if (!window.hasInjectedElementSelector) {
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: md-saver-spin 1.2s linear infinite;">
           <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
         </svg>
+      </span>
       <span>마크다운 추출 및 번역 중...</span>
       <span class="cancel-toast-btn" style="display:flex;align-items:center;cursor:pointer;margin-left:10px;opacity:0.8;transition:opacity 0.2s;" title="취소" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -181,17 +191,169 @@ if (!window.hasInjectedElementSelector) {
     }
   }
 
+  function createDragBox(x, y) {
+    if (!dragBoxEl) {
+      dragBoxEl = document.createElement("div");
+      dragBoxEl.id = "md-saver-drag-box";
+      dragBoxEl.style.cssText = `
+        position: fixed;
+        border: 2px dashed #FF5A00;
+        background: rgba(255, 90, 0, 0.15);
+        z-index: 9999998;
+        pointer-events: none;
+        box-sizing: border-box;
+      `;
+      document.body.appendChild(dragBoxEl);
+    }
+    updateDragBox(x, y);
+  }
+
+  function updateDragBox(currentX, currentY) {
+    if (!dragBoxEl) return;
+    const left = Math.min(dragStartX, currentX);
+    const top = Math.min(dragStartY, currentY);
+    const width = Math.abs(currentX - dragStartX);
+    const height = Math.abs(currentY - dragStartY);
+    dragBoxEl.style.left = `${left}px`;
+    dragBoxEl.style.top = `${top}px`;
+    dragBoxEl.style.width = `${width}px`;
+    dragBoxEl.style.height = `${height}px`;
+  }
+
+  function removeDragBox() {
+    if (dragBoxEl) {
+      dragBoxEl.remove();
+      dragBoxEl = null;
+    }
+  }
+
+  function selectElementsInRect(boxRect) {
+    // 5px 이하의 미세한 드래그는 무시
+    const boxWidth = boxRect.right - boxRect.left;
+    const boxHeight = boxRect.bottom - boxRect.top;
+    if (boxWidth < DRAG_THRESHOLD && boxHeight < DRAG_THRESHOLD) {
+      return;
+    }
+
+    const candidateSelectors = "article, section, div, p, pre, table, ul, ol, h1, h2, h3, h4, h5, h6, img, a, blockquote, code, li";
+    const allElements = Array.from(document.body.querySelectorAll(candidateSelectors));
+
+    const intersected = allElements.filter(el => {
+      // 확장 프로그램 자체 UI 요소는 제외
+      if (el.id === "md-saver-toast" || el.closest("#md-saver-toast") || 
+          el.id === "md-saver-drag-box" || el === floatingBtn || 
+          el.closest(".md-saver-modal")) {
+        return false;
+      }
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+
+      // 1. 기본 교차 검사 (AABB Collision)
+      const isOverlap = !(rect.right < boxRect.left || 
+                          rect.left > boxRect.right || 
+                          rect.bottom < boxRect.top || 
+                          rect.top > boxRect.bottom);
+      if (!isOverlap) return false;
+
+      // 2. 스마트 하이브리드 임계값 판정 (살짝 걸친 요소 제외)
+      const overlapWidth = Math.max(0, Math.min(boxRect.right, rect.right) - Math.max(boxRect.left, rect.left));
+      const overlapHeight = Math.max(0, Math.min(boxRect.bottom, rect.bottom) - Math.max(boxRect.top, rect.top));
+      const overlapArea = overlapWidth * overlapHeight;
+      const elArea = rect.width * rect.height;
+
+      // 조건 A: 요소 전체 면적의 40% 이상이 덮였을 때
+      const isAreaQualified = (overlapArea / elArea) >= 0.4;
+
+      // 조건 B: 가로가 긴 블록 요소를 위해, 세로 높이의 50% 이상이 덮이면서 의미 있는 너비가 겹쳤을 때
+      const isHeightQualified = (overlapHeight >= rect.height * 0.5) && 
+                                (overlapWidth >= Math.min(rect.width * 0.25, 40));
+
+      // 조건 C: 드래그 박스가 요소보다 작지만 요소 내부를 집중적으로 긁은 경우 (박스 면적의 60% 이상 차지)
+      const isBoxCovered = (overlapArea / (boxWidth * boxHeight)) >= 0.6;
+
+      return isAreaQualified || isHeightQualified || isBoxCovered;
+    });
+
+    if (intersected.length === 0) return;
+
+    // 거대 컨테이너 필터링 (박스 크기보다 과도하게 큰 부모가 잡혀서 내부 자식들이 묻히는 현상 방지)
+    const boxArea = boxWidth * boxHeight;
+    const validElements = intersected.filter(el => {
+      const rect = el.getBoundingClientRect();
+      const elArea = rect.width * rect.height;
+      if (elArea > boxArea * 3 && intersected.some(other => other !== el && el.contains(other))) {
+        return false;
+      }
+      return true;
+    });
+
+    // 부모-자식 중복 제거: 다른 유효 요소의 자식인 요소는 제외하여 최외곽 유효 요소만 선택
+    const finalSelected = validElements.filter(el => {
+      return !validElements.some(other => other !== el && other.contains(el));
+    });
+
+    if (finalSelected.length === 0) return;
+
+    finalSelected.forEach(el => {
+      if (!isElementSelected(el)) {
+        selectedElements.push({
+          element: el,
+          originalOutline: el.style.outline,
+          originalBackgroundColor: el.style.backgroundColor
+        });
+      }
+    });
+
+    const elementsToProcess = selectedElements.map(item => item.element);
+    if (elementsToProcess.length > 0) {
+      processElements(elementsToProcess);
+    }
+  }
+
   function mouseDownHandler(e) {
-    // 요소 선택 모드 중에는 텍스트 블록 지정(드래그)을 방지합니다.
+    if (e.button !== 0) return; // 좌클릭만 처리
+    // 요소 선택 모드 중에는 기본 텍스트 블록 지정(드래그)을 방지합니다.
     e.preventDefault();
+    isMouseDown = true;
+    isDragging = false;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+  }
+
+  function mouseUpHandler(e) {
+    if (e.button !== 0) return;
+    if (isDragging) {
+      const boxRect = {
+        left: Math.min(dragStartX, e.clientX),
+        top: Math.min(dragStartY, e.clientY),
+        right: Math.max(dragStartX, e.clientX),
+        bottom: Math.max(dragStartY, e.clientY)
+      };
+      removeDragBox();
+      selectElementsInRect(boxRect);
+      isDragging = false;
+      isMouseDown = false;
+      justFinishedDragging = true;
+      setTimeout(() => {
+        justFinishedDragging = false;
+      }, 50);
+    } else {
+      isMouseDown = false;
+    }
   }
 
   function stopSelection(fullyCancel) {
     document.removeEventListener("mousemove", mouseMoveHandler);
     document.removeEventListener("click", clickHandler, true);
     document.removeEventListener("mousedown", mouseDownHandler, true);
+    document.removeEventListener("mouseup", mouseUpHandler, true);
     document.removeEventListener("keydown", escapeHandler);
     
+    isMouseDown = false;
+    isDragging = false;
+    justFinishedDragging = false;
+    removeDragBox();
+
     // 호버링 중이던 요소 복구
     if (highlightedElement && !isElementSelected(highlightedElement)) {
       highlightedElement.style.outline = originalOutline;
@@ -216,6 +378,7 @@ if (!window.hasInjectedElementSelector) {
     document.addEventListener("mousemove", mouseMoveHandler);
     document.addEventListener("click", clickHandler, true);
     document.addEventListener("mousedown", mouseDownHandler, true);
+    document.addEventListener("mouseup", mouseUpHandler, true);
     document.addEventListener("keydown", escapeHandler);
   }
 
@@ -229,8 +392,31 @@ if (!window.hasInjectedElementSelector) {
     return selectedElements.some(item => item.element === el);
   }
 
-  // 마우스 이동 시 하이라이트 효과 적용
+  // 마우스 이동 시 하이라이트 효과 적용 및 드래그 박스 갱신
   function mouseMoveHandler(e) {
+    if (isMouseDown) {
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist >= DRAG_THRESHOLD) {
+        if (!isDragging) {
+          isDragging = true;
+          // 호버링 중이던 요소 스타일 복원
+          if (highlightedElement && !isElementSelected(highlightedElement)) {
+            highlightedElement.style.outline = originalOutline;
+            highlightedElement.style.backgroundColor = originalBackgroundColor;
+            highlightedElement = null;
+          }
+          createDragBox(e.clientX, e.clientY);
+        }
+        updateDragBox(e.clientX, e.clientY);
+        return; // 드래그 중에는 호버 하이라이트 로직을 수행하지 않음
+      }
+    }
+
+    if (isDragging) return;
+
     if (highlightedElement && !isElementSelected(highlightedElement)) {
       highlightedElement.style.outline = originalOutline;
       highlightedElement.style.backgroundColor = originalBackgroundColor;
@@ -251,6 +437,12 @@ if (!window.hasInjectedElementSelector) {
 
   // 클릭 시 요소 추출 및 변환
   function clickHandler(e) {
+    if (justFinishedDragging || isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
