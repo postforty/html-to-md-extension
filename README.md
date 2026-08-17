@@ -64,6 +64,29 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 
 ---
 
+## 📜 Changelog
+
+### v1.2
+- **🌐 Full i18n & Localization:** Full support for Korean and English UI with automatic browser language detection and manual setting override.
+- **⚙️ Custom Gemini Model ID:** Support for specifying custom Gemini model IDs (e.g., `gemini-3.5-flash`, `gemini-3.1-pro-preview`) alongside the default model.
+- **🔄 Settings Reset:** One-click reset for model, language, and save options while safely preserving the API Key.
+- **⚡ Instant Modal Responsiveness:** Optimized UX to display the preview modal in 0.01s upon element selection.
+- **📚 Multilingual Documentation:** Separated English and Korean READMEs and updated store listing documentation.
+
+### v1.1
+- **🖱️ Drag-to-Extract Area:** Smart algorithm to capture multiple elements at once by dragging a rectangular area across the screen.
+- **🧩 Intuitive Multi-Selection:** Select and merge scattered elements using `Ctrl` (or `Cmd` on macOS) + Click.
+- **📑 Right-Click Context Menu Extraction:** Extract highlighted text directly to Markdown via right-click context menu in multiple modes.
+- **🔧 Compatibility & Rendering Fixes:** Improved compatibility with frameset sites and enhanced preview sharpness on macOS.
+
+### v1.0
+- **🎉 Initial Release:** Core HTML to Markdown conversion Chrome extension.
+- **📝 Full GFM Support:** Clean conversion with support for tables, fenced code blocks, and inline formatting.
+- **🔗 Automatic Absolute URL Resolution:** Resolves relative paths for links and images to absolute, clickable URLs.
+- **🤖 Gemini AI Translation:** Automated Markdown translation with real-time preview, copy-to-clipboard, and download.
+
+---
+
 ## 📄 License
 
 MIT License
