@@ -27,8 +27,46 @@ if (!window.hasInjectedElementSelector) {
 
 
 
+  // Shadow DOM 내부 실제 요소를 가져오고 확장 프로그램 자체 UI는 배제하는 헬퍼 함수
+  function getDeepTarget(e) {
+    const path = e.composedPath ? e.composedPath() : [e.target];
+    for (const el of path) {
+      if (!el || el === window || el === document || el.nodeType !== 1) continue;
+      if (el.id === "md-saver-toast" || el.id === "md-saver-drag-box" || 
+          el.id === "md-saver-floating-btn" || el === floatingBtn || 
+          (typeof el.className === "string" && el.className.includes("md-saver-modal")) ||
+          (el.closest && el.closest(".md-saver-modal"))) {
+        return null;
+      }
+      return el;
+    }
+    return e.target;
+  }
+
+  // Open Shadow DOM 내부까지 재귀적으로 candidate 엘리먼트를 수집하는 헬퍼 함수
+  function getAllElementsDeep(rootNode, selector) {
+    const results = [];
+    if (!rootNode) return results;
+
+    if (rootNode.querySelectorAll) {
+      try {
+        results.push(...Array.from(rootNode.querySelectorAll(selector)));
+      } catch (err) {}
+    }
+
+    const allElements = rootNode.querySelectorAll ? rootNode.querySelectorAll("*") : [];
+    for (const el of allElements) {
+      if (el.shadowRoot) {
+        results.push(...getAllElementsDeep(el.shadowRoot, selector));
+      }
+    }
+
+    return results;
+  }
+
   function showPreviewModal(markdownText, isTranslating = false, onCancel = null) {
     const modalOverlay = document.createElement("div");
+    modalOverlay.className = "md-saver-modal md-saver-overlay";
     modalOverlay.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.6); z-index: 9999998;
@@ -106,7 +144,10 @@ if (!window.hasInjectedElementSelector) {
       if (onCancel) onCancel();
       modalOverlay.remove();
       if (!window.isContextMenuTriggered) {
+        window.hasStartedSelection = true;
         startSelection(); // 팝업으로 시작한 경우에만 다시 요소 선택 모드로 진입
+      } else {
+        window.hasStartedSelection = false;
       }
     };
 
@@ -183,6 +224,7 @@ if (!window.hasInjectedElementSelector) {
     if (selectedElements.length > 0) {
       if (!floatingBtn) {
         floatingBtn = document.createElement("div");
+        floatingBtn.id = "md-saver-floating-btn";
         floatingBtn.style.cssText = `
           position: fixed;
           bottom: 30px;
@@ -270,13 +312,14 @@ if (!window.hasInjectedElementSelector) {
     }
 
     const candidateSelectors = "article, section, div, p, pre, table, ul, ol, h1, h2, h3, h4, h5, h6, img, a, blockquote, code, li";
-    const allElements = Array.from(document.body.querySelectorAll(candidateSelectors));
+    const allElements = getAllElementsDeep(document.body, candidateSelectors);
 
     const intersected = allElements.filter(el => {
       // 확장 프로그램 자체 UI 요소는 제외
-      if (el.id === "md-saver-toast" || el.closest("#md-saver-toast") || 
-          el.id === "md-saver-drag-box" || el === floatingBtn || 
-          el.closest(".md-saver-modal")) {
+      if (el.id === "md-saver-toast" || (el.closest && el.closest("#md-saver-toast")) || 
+          el.id === "md-saver-drag-box" || el.id === "md-saver-floating-btn" || el === floatingBtn || 
+          (typeof el.className === "string" && el.className.includes("md-saver-modal")) ||
+          (el.closest && el.closest(".md-saver-modal"))) {
         return false;
       }
       const rect = el.getBoundingClientRect();
@@ -315,7 +358,7 @@ if (!window.hasInjectedElementSelector) {
     const validElements = intersected.filter(el => {
       const rect = el.getBoundingClientRect();
       const elArea = rect.width * rect.height;
-      if (elArea > boxArea * 3 && intersected.some(other => other !== el && el.contains(other))) {
+      if (elArea > boxArea * 3 && intersected.some(other => other !== el && el.contains && el.contains(other))) {
         return false;
       }
       return true;
@@ -323,7 +366,7 @@ if (!window.hasInjectedElementSelector) {
 
     // 부모-자식 중복 제거: 다른 유효 요소의 자식인 요소는 제외하여 최외곽 유효 요소만 선택
     const finalSelected = validElements.filter(el => {
-      return !validElements.some(other => other !== el && other.contains(el));
+      return !validElements.some(other => other !== el && other.contains && other.contains(el));
     });
 
     if (finalSelected.length === 0) return;
@@ -346,6 +389,9 @@ if (!window.hasInjectedElementSelector) {
 
   function mouseDownHandler(e) {
     if (e.button !== 0) return; // 좌클릭만 처리
+    const target = getDeepTarget(e);
+    if (!target) return;
+
     // 요소 선택 모드 중에는 기본 텍스트 블록 지정(드래그)을 방지합니다.
     e.preventDefault();
     isMouseDown = true;
@@ -377,11 +423,11 @@ if (!window.hasInjectedElementSelector) {
   }
 
   function stopSelection(fullyCancel) {
-    document.removeEventListener("mousemove", mouseMoveHandler);
+    document.removeEventListener("mousemove", mouseMoveHandler, true);
     document.removeEventListener("click", clickHandler, true);
     document.removeEventListener("mousedown", mouseDownHandler, true);
     document.removeEventListener("mouseup", mouseUpHandler, true);
-    document.removeEventListener("keydown", escapeHandler);
+    document.removeEventListener("keydown", escapeHandler, true);
     
     isMouseDown = false;
     isDragging = false;
@@ -409,11 +455,12 @@ if (!window.hasInjectedElementSelector) {
 
   function startSelection() {
     window.hasInjectedElementSelector = true;
-    document.addEventListener("mousemove", mouseMoveHandler);
+    window.hasStartedSelection = true;
+    document.addEventListener("mousemove", mouseMoveHandler, true);
     document.addEventListener("click", clickHandler, true);
     document.addEventListener("mousedown", mouseDownHandler, true);
     document.addEventListener("mouseup", mouseUpHandler, true);
-    document.addEventListener("keydown", escapeHandler);
+    document.addEventListener("keydown", escapeHandler, true);
   }
 
   function escapeHandler(e) {
@@ -451,12 +498,17 @@ if (!window.hasInjectedElementSelector) {
 
     if (isDragging) return;
 
+    const target = getDeepTarget(e);
+    if (!target) return;
+
+    if (highlightedElement === target) return;
+
     if (highlightedElement && !isElementSelected(highlightedElement)) {
       highlightedElement.style.outline = originalOutline;
       highlightedElement.style.backgroundColor = originalBackgroundColor;
     }
     
-    highlightedElement = e.target;
+    highlightedElement = target;
     
     if (isElementSelected(highlightedElement)) {
       return; // 이미 다중 선택된 요소 위를 지날 때는 스타일 유지
@@ -477,10 +529,11 @@ if (!window.hasInjectedElementSelector) {
       return;
     }
 
+    const clickedEl = getDeepTarget(e);
+    if (!clickedEl) return;
+
     e.preventDefault();
     e.stopPropagation();
-
-    const clickedEl = e.target;
 
     // 다중 선택 토글 (Ctrl 또는 Mac Cmd 키)
     if (e.ctrlKey || e.metaKey) {
@@ -648,10 +701,11 @@ if (!window.hasInjectedElementSelector) {
     } else if (request.action === "start_hover_selection") {
       window.isContextMenuTriggered = false; // 팝업을 통한 실행
       window.currentTranslateMode = request.mode; // 팝업에서 선택한 일회용 모드 저장
-      if (!window.hasStartedSelection) {
-        window.hasStartedSelection = true;
-        startSelection();
-      }
+      
+      // 기존 리스너 및 상태 안전 정리 후 시작
+      stopSelection(false);
+      window.hasStartedSelection = true;
+      startSelection();
     }
   });
 

@@ -19,7 +19,9 @@ document.getElementById("start-btn").addEventListener("click", async () => {
     });
     
     // 명시적으로 호버 선택 모드 시작 요청 및 일회용 모드 전달
-    chrome.tabs.sendMessage(tab.id, { action: "start_hover_selection", mode: translateMode });
+    await chrome.tabs.sendMessage(tab.id, { action: "start_hover_selection", mode: translateMode }).catch((err) => {
+      console.warn("sendMessage warning:", err);
+    });
     
     window.close(); // 팝업 닫기
   } catch (error) {

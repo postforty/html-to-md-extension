@@ -19,6 +19,7 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 - **🔀 Flexible Translation Modes:** Supports Original Only, Translated Only, and Interleaved (Original + Translation) modes.
 - **🌐 Full i18n & Localization:** Built-in support for Korean and English with automatic browser language detection and manual override in settings.
 - **🔄 Reset to Defaults:** Safely reset model, language, and save mode options with one click while preserving your API key.
+- **🛡️ Full Shadow DOM & Modern Web App Support:** Accurately inspects and extracts nested text and code blocks inside Shadow Roots (`shadowRoot`) found in Web Components and modern web apps (Lit, Angular, Polymer, etc.).
 - **🛡️ Safe Cancellation (`ESC`):** Press `ESC` at any time during selection mode to cleanly exit.
 - **📝 Full GFM (GitHub Flavored Markdown) Support:** Preserves tables, strikethrough, and code blocks (`<pre>`, `<code>`) cleanly as fenced code blocks (` ``` `).
 - **🔗 Automatic Absolute URL Resolution:** Automatically resolves relative hyperlinks (`.`, `/`) and image paths to absolute, clickable URLs to prevent broken links.
@@ -65,6 +66,12 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 ---
 
 ## 📜 Changelog
+
+### v1.3
+- **🛡️ Full Shadow DOM & Web Component Support:** Uses `e.composedPath()` and recursive Shadow Root traversal to precisely target and extract elements inside Web Components (e.g., Google Stitch, Google Cloud Console).
+- **⚡ Capturing Mode Event Listeners:** Event listeners now use the capturing phase to bypass page-level `stopPropagation` interference during hover and click selection.
+- **🔒 Global Host Permissions (`host_permissions`):** Added `<all_urls>` host permissions to ensure reliable script injection across all domains and subframes.
+- **🔄 Selection Lifecycle Stabilization:** Safely cleans up previous selection state and guarantees seamless re-entry when clicking [Start Element Selection].
 
 ### v1.2
 - **🌐 Full i18n & Localization:** Full support for Korean and English UI with automatic browser language detection and manual setting override.
