@@ -69,8 +69,7 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 
 ### v1.3
 - **🛡️ Full Shadow DOM & Web Component Support:** Uses `e.composedPath()` and recursive Shadow Root traversal to precisely target and extract elements inside Web Components (e.g., Google Stitch, Google Cloud Console).
-- **⚡ Capturing Mode Event Listeners:** Event listeners now use the capturing phase to bypass page-level `stopPropagation` interference during hover and click selection.
-- **🔒 Global Host Permissions (`host_permissions`):** Added `<all_urls>` host permissions to ensure reliable script injection across all domains and subframes.
+- **🔒 Global Host Permissions (`host_permissions`):** Configured `<all_urls>` host permissions to ensure reliable script injection across modern web apps and nested subframes.
 - **🔄 Selection Lifecycle Stabilization:** Safely cleans up previous selection state and guarantees seamless re-entry when clicking [Start Element Selection].
 
 ### v1.2

@@ -209,16 +209,30 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const mode = info.menuItemId.replace("convert_", "");
 
     try {
-      // 1. 의존성 스크립트 및 content.js 주입
+      // 1. 서브프레임이 있으면 해당 프레임에 주입 시도, 없으면 메인 프레임에 주입
+      const target = (typeof info.frameId === "number" && info.frameId !== 0)
+        ? { tabId: tab.id, frameIds: [info.frameId] }
+        : { tabId: tab.id };
+
       await chrome.scripting.executeScript({
-        target: { tabId: tab.id, frameIds: [info.frameId] },
+        target: target,
         files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
       });
 
       // 2. 현재 탭의 content.js에 선택 영역 변환 명령(모드 포함) 전송
-      chrome.tabs.sendMessage(tab.id, { action: "process_context_selection", mode: mode }, { frameId: info.frameId });
+      const options = (typeof info.frameId === "number" && info.frameId !== 0) ? { frameId: info.frameId } : {};
+      chrome.tabs.sendMessage(tab.id, { action: "process_context_selection", mode: mode }, options);
     } catch (e) {
-      console.error("컨텍스트 메뉴 실행 실패:", e);
+      // 서브프레임 주입 실패 시 메인 탭에 fallback 주입 시도
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
+        });
+        chrome.tabs.sendMessage(tab.id, { action: "process_context_selection", mode: mode });
+      } catch (fallbackError) {
+        console.warn("컨텍스트 메뉴 실행 실패:", fallbackError);
+      }
     }
   }
 });
