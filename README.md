@@ -67,6 +67,9 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 
 ## 📜 Changelog
 
+### v1.4
+- **🛡️ 2-Tier Fallback Script Injection (Robust Support for Complex & News Sites):** Automatic main-frame fallback injection if `allFrames: true` injection is blocked by security-restricted subframes (`accounts.google.com`, sandboxed ads, cross-origin trackers), ensuring element selection always initiates reliably across complex websites.
+
 ### v1.3
 - **🛡️ Full Shadow DOM & Web Component Support:** Uses `e.composedPath()` and recursive Shadow Root traversal to precisely target and extract elements inside Web Components (e.g., Google Stitch, Google Cloud Console).
 - **🔒 Global Host Permissions (`host_permissions`):** Configured `<all_urls>` host permissions to ensure reliable script injection across modern web apps and nested subframes.

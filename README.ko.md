@@ -64,6 +64,9 @@
 
 ## 📜 버전 히스토리 (Changelog)
 
+### v1.4
+- **🛡️ 2단계 Fallback 스크립트 주입 (포털/언론사 등 복잡한 사이트 완벽 지원):** 구글 간편 로그인(`accounts.google.com`), 샌드박스 광고 등 보안 제한된 서브프레임(`<iframe>`)이 다수 포함된 페이지에서도 `allFrames: true` 주입 실패 시 메인 프레임으로 자동 fallback 재시도하여 요소 선택 기능이 항상 안정적으로 실행되도록 개선
+
 ### v1.3
 - **🛡️ Shadow DOM 및 웹 컴포넌트 지원:** `e.composedPath()` 및 재귀적 Shadow Root 탐색을 통해 Google Stitch 등 최신 웹 컴포넌트 기반 웹앱에서도 하위 요소를 정밀하게 추출
 - **🔒 전역 호스트 권한(`host_permissions`) 보강:** 복잡한 서브프레임 및 최신 웹앱에서도 제한 없이 동작할 수 있도록 권한 구성

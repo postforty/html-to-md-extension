@@ -12,11 +12,23 @@ document.getElementById("start-btn").addEventListener("click", async () => {
       return;
     }
 
-    // i18n 모듈, turndown 변환 라이브러리와 선택 로직 스크립트를 현재 탭에 실행 (모든 프레임 포함)
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id, allFrames: true },
-      files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
-    });
+    // i18n 모듈, turndown 변환 라이브러리와 선택 로직 스크립트를 현재 탭에 실행
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
+      });
+    } catch (e) {
+      // allFrames 실패 시 (구글 로그인, 광고 등 보안 제한된 iframe 포함 페이지) 메인 프레임 단독 주입 시도
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
+        });
+      } catch (err) {
+        console.warn("스크립트 주입 경고:", err);
+      }
+    }
     
     // 명시적으로 호버 선택 모드 시작 요청 및 일회용 모드 전달
     await chrome.tabs.sendMessage(tab.id, { action: "start_hover_selection", mode: translateMode }).catch((err) => {
