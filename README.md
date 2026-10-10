@@ -20,6 +20,8 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 - **🌐 Full i18n & Localization:** Built-in support for Korean and English with automatic browser language detection and manual override in settings.
 - **🔄 Reset to Defaults:** Safely reset model, language, and save mode options with one click while preserving your API key.
 - **🛡️ Full Shadow DOM & Modern Web App Support:** Accurately inspects and extracts nested text and code blocks inside Shadow Roots (`shadowRoot`) found in Web Components and modern web apps (Lit, Angular, Polymer, etc.).
+- **💬 Real-Time Status Toasts & Key Event Isolation:** Displays top toast notifications on selection start (`ESC: Cancel`) and cancellation, while cleanly isolating `ESC` key events (`preventDefault` & `stopPropagation`) from host page shortcuts.
+- **📁 Local HTML File (`file://`) Support & Permission Detection:** Seamlessly convert local HTML files saved on your PC with helpful onboarding alerts if Chrome's "Allow access to file URLs" permission is disabled.
 - **🛡️ Safe Cancellation (`ESC`):** Press `ESC` at any time during selection mode to cleanly exit.
 - **📝 Full GFM (GitHub Flavored Markdown) Support:** Preserves tables, strikethrough, and code blocks (`<pre>`, `<code>`) cleanly as fenced code blocks (` ``` `).
 - **🔗 Automatic Absolute URL Resolution:** Automatically resolves relative hyperlinks (`.`, `/`) and image paths to absolute, clickable URLs to prevent broken links.
@@ -66,6 +68,13 @@ A Chrome extension that allows you to extract web page elements by clicking or d
 ---
 
 ## 📜 Changelog
+
+### v1.5
+- **⚡ 0ms Smart Instant Re-activation (Robust Support for Ad/Iframe-Heavy Pages):** Resolved freeze/delay issues when re-activating element selection after pressing `ESC` on heavy news/portal pages (e.g., Chosun Ilbo with 20–30+ ad iframes). Implemented ultrafast main-frame injection checks (1ms) and direct function invocation to guarantee 0ms latency re-entry.
+- **💬 Real-Time Status Toast UI:** Added visual toast banners at the top of the viewport when element selection begins (`Selection mode started. (ESC: Cancel)`) and when exited (`Selection mode cancelled.`), greatly improving user clarity.
+- **⌨️ Safe ESC Key Isolation:** Applied `e.preventDefault()` and `e.stopPropagation()` when pressing `ESC` to prevent interference with host page modals, video players, and custom key listeners.
+- **📁 Local HTML File (`file://`) Support & Permission Alerts:** Added pre-validation and clear onboarding alerts when attempting to scrape local HTML files without Chrome's "Allow access to file URLs" permission enabled.
+- **🌐 Expanded Localization (i18n):** Added English and Korean translations for new toast notifications and local file access alerts.
 
 ### v1.4
 - **🛡️ 2-Tier Fallback Script Injection (Robust Support for Complex & News Sites):** Automatic main-frame fallback injection if `allFrames: true` injection is blocked by security-restricted subframes (`accounts.google.com`, sandboxed ads, cross-origin trackers), ensuring element selection always initiates reliably across complex websites.

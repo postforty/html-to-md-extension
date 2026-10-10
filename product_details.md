@@ -34,6 +34,8 @@ HTML to MD Saver is a powerful, intuitive Chrome extension that allows you to ef
 10. Preserved Code Block Formatting: Keeps exact indentation, syntax, and line breaks intact within clean fenced code blocks (```).
 11. Smart Absolute URL Resolution: Automatically converts relative paths (., /) for links and images to absolute, clickable URLs.
 12. Robust Multi-Frame & Portal Compatibility: Employs a smart 2-tier fallback script injection mechanism that flawlessly operates even on news portals and complex pages laden with Google One Tap sign-in, sandboxed ads, and nested iframes.
+13. Instant Smart Re-activation & Toast Feedback: Instantly re-enters selection mode with 0ms delay even across ad-heavy multi-iframe pages, accompanied by real-time status toast banners and isolated ESC key handling.
+14. Local HTML File (file://) Support: Enables scraping directly from local HTML files on your PC with helpful onboarding guidance for Chrome file access permissions.
 
 Upgrade your web scraping workflow and AI copilot experience today with HTML to MD Saver!
 ```
@@ -70,6 +72,8 @@ HTML to MD Saver는 웹 서핑 중 발견한 유용한 정보, 문서, 소스 �
 10. 코드 블록 포맷팅 보존: 원본 페이지의 소스 코드 줄바꿈과 들여쓰기를 훼손하지 않고, 깔끔한 펜스 코드 블록(```) 형태로 온전히 유지합니다.
 11. 스마트 링크 변환: 원본 페이지에서 상대 경로로 지정된 링크 및 이미지 주소를 절대 경로로 자동 변환하여, 저장된 파일에서 링크가 깨지는 현상을 방지합니다.
 12. 다중 프레임 & 포털/언론사 사이트 완벽 호환: 구글 간편 로그인(Google One Tap), 샌드박스 광고 등 보안 제한된 iframe이 다수 포함된 복잡한 사이트에서도 2단계 Fallback 주입을 통해 오류 없이 안정적으로 요소 선택 모드를 시작합니다.
+13. 스마트 즉각 재진입 & 실시간 토스트 안내: 수십 개의 광고 iframe이 로드된 복잡한 웹페이지에서도 0ms 딜레이로 즉시 선택 모드에 재진입하며, 화면 상단 상태 안내 토스트 및 ESC 단축키 간섭 방지를 제공합니다.
+14. 로컬 HTML 파일(file://) 지원: 웹페이지뿐만 아니라 내 컴퓨터에 저장된 로컬 HTML 파일도 손쉽게 마크다운으로 변환할 수 있으며, Chrome 권한 필요 시 친절한 가이드를 제공합니다.
 
 복잡하고 번거로운 복사 붙여넣기 대신, HTML to MD Saver로 쾌적하고 스마트한 웹 스크랩과 AI 코파일럿 환경을 경험해 보세요!
 ```

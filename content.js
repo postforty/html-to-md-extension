@@ -453,6 +453,39 @@ if (!window.hasInjectedElementSelector) {
     }
   }
 
+  function showToast(message, duration = 1800) {
+    let toast = document.getElementById("md-saver-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "md-saver-toast";
+      toast.style.cssText = `
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(30, 30, 30, 0.92);
+        color: #fff;
+        padding: 10px 22px;
+        border-radius: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        z-index: 2147483647;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      `;
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300);
+    }, duration);
+  }
+
   function startSelection() {
     window.hasInjectedElementSelector = true;
     window.hasStartedSelection = true;
@@ -461,11 +494,22 @@ if (!window.hasInjectedElementSelector) {
     document.addEventListener("mousedown", mouseDownHandler, true);
     document.addEventListener("mouseup", mouseUpHandler, true);
     document.addEventListener("keydown", escapeHandler, true);
+
+    const msg = typeof I18N !== "undefined"
+      ? I18N.t("toastSelectionStarted", [], currentLang)
+      : "요소 선택 모드가 시작되었습니다. (ESC: 취소)";
+    showToast(msg);
   }
 
   function escapeHandler(e) {
     if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
       stopSelection(true);
+      const msg = typeof I18N !== "undefined"
+        ? I18N.t("toastSelectionCancelled", [], currentLang)
+        : "요소 선택 모드가 해제되었습니다.";
+      showToast(msg);
     }
   }
 
@@ -678,6 +722,15 @@ if (!window.hasInjectedElementSelector) {
     }
   }
 
+  // 팝업 등 외부에서 직접 호출할 수 있도록 전역 함수 노출
+  window.startHoverSelectionFromExtension = function (mode) {
+    window.isContextMenuTriggered = false;
+    window.currentTranslateMode = mode;
+    stopSelection(false);
+    window.hasStartedSelection = true;
+    startSelection();
+  };
+
   // 우클릭 메뉴(Context Menu) 및 팝업으로부터의 메시지 수신
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (typeof I18N !== "undefined") {
@@ -698,14 +751,10 @@ if (!window.hasInjectedElementSelector) {
         
         processHTML(div.innerHTML);
       }
+      if (sendResponse) sendResponse({ success: true });
     } else if (request.action === "start_hover_selection") {
-      window.isContextMenuTriggered = false; // 팝업을 통한 실행
-      window.currentTranslateMode = request.mode; // 팝업에서 선택한 일회용 모드 저장
-      
-      // 기존 리스너 및 상태 안전 정리 후 시작
-      stopSelection(false);
-      window.hasStartedSelection = true;
-      startSelection();
+      window.startHoverSelectionFromExtension(request.mode);
+      if (sendResponse) sendResponse({ success: true });
     }
   });
 

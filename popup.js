@@ -7,37 +7,59 @@ document.getElementById("start-btn").addEventListener("click", async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     // 크롬 내부 페이지 등 보호된 페이지 예외 처리
-    if (tab.url.startsWith("chrome://") || tab.url.startsWith("https://chrome.google.com/webstore")) {
+    if (tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://") || tab.url.startsWith("https://chrome.google.com/webstore")) {
       alert(I18N.t("alertProtectedPage", [], currentLang));
       return;
     }
 
-    // i18n 모듈, turndown 변환 라이브러리와 선택 로직 스크립트를 현재 탭에 실행
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
-      });
-    } catch (e) {
-      // allFrames 실패 시 (구글 로그인, 광고 등 보안 제한된 iframe 포함 페이지) 메인 프레임 단독 주입 시도
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
-        });
-      } catch (err) {
-        console.warn("스크립트 주입 경고:", err);
+    // 로컬 파일(file://)인 경우 파일 URL 액세스 권한 여부 사전 검사
+    if (tab.url.startsWith("file://")) {
+      const isAllowed = await chrome.extension.isAllowedFileSchemeAccess();
+      if (!isAllowed) {
+        alert(I18N.t("alertFileAccessRequired", [], currentLang));
+        return;
       }
     }
+
+    // 1. 이미 메인 프레임에 스크립트가 주입되어 있는지 확인
+    const checkResult = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => typeof window.hasInjectedElementSelector !== "undefined"
+    }).catch(() => null);
+
+    const isAlreadyInjected = checkResult && checkResult[0] && checkResult[0].result === true;
+
+    // 2. 주입되지 않은 경우 메인 프레임에 스크립트 파일 주입
+    if (!isAlreadyInjected) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
+      });
+    }
     
-    // 명시적으로 호버 선택 모드 시작 요청 및 일회용 모드 전달
-    await chrome.tabs.sendMessage(tab.id, { action: "start_hover_selection", mode: translateMode }).catch((err) => {
-      console.warn("sendMessage warning:", err);
-    });
+    // 3. 메인 프레임에서 호버 선택 모드 직접 활성화 (포트 단절 및 다중 iframe 메시징 충돌 방지)
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (mode) => {
+          if (typeof window.startHoverSelectionFromExtension === "function") {
+            window.startHoverSelectionFromExtension(mode);
+          }
+        },
+        args: [translateMode]
+      });
+    } catch (directErr) {
+      // 직접 실행 실패 시 fallback으로 메인 프레임(frameId: 0) 대상 메시지 전송 시도
+      await chrome.tabs.sendMessage(
+        tab.id,
+        { action: "start_hover_selection", mode: translateMode },
+        { frameId: 0 }
+      ).catch(() => {});
+    }
     
-    window.close(); // 팝업 닫기
+    window.close(); // 성공 시 팝업 닫기
   } catch (error) {
-    console.error("스크립트 주입 실패:", error);
+    console.error("스크립트 주입 또는 실행 실패:", error);
     const currentLang = await I18N.getEffectiveLanguage();
     alert(I18N.t("alertScriptFailed", [], currentLang));
   }

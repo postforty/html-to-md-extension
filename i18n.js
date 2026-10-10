@@ -17,6 +17,7 @@
         modeTranslated: "번역본만 저장",
         modeBoth: "원본 + 번역본 저장",
         alertProtectedPage: "이 페이지에서는 확장 프로그램을 사용할 수 없습니다.",
+        alertFileAccessRequired: "로컬 파일(file://)에서 사용하려면 확장 프로그램 관리(chrome://extensions)에서 '파일 URL에 대한 액세스 허용' 설정을 활성화해야 합니다.",
         alertScriptFailed: "스크립트 주입에 실패했습니다.",
 
         // Options UI
@@ -39,6 +40,8 @@
         resetSuccess: "기본값으로 초기화되었습니다.",
 
         // Content Script UI
+        toastSelectionStarted: "요소 선택 모드가 시작되었습니다. (ESC: 취소)",
+        toastSelectionCancelled: "요소 선택 모드가 해제되었습니다.",
         toastProcessing: "마크다운 추출 및 번역 중...",
         toastCancelTitle: "취소",
         toastSuccess: "변환 완료! 파일이 다운로드됩니다.",
@@ -72,6 +75,7 @@
         modeTranslated: "Translated Only",
         modeBoth: "Original + Translated",
         alertProtectedPage: "The extension cannot be used on this page.",
+        alertFileAccessRequired: "To use on local files (file://), please enable 'Allow access to file URLs' in chrome://extensions.",
         alertScriptFailed: "Failed to inject script.",
 
         // Options UI
@@ -94,6 +98,8 @@
         resetSuccess: "Settings reset to defaults.",
 
         // Content Script UI
+        toastSelectionStarted: "Element selection mode started. (ESC to cancel)",
+        toastSelectionCancelled: "Element selection mode cancelled.",
         toastProcessing: "Extracting and translating markdown...",
         toastCancelTitle: "Cancel",
         toastSuccess: "Conversion completed! Downloading file.",
