@@ -21,7 +21,7 @@ document.getElementById("start-btn").addEventListener("click", async () => {
       }
     }
 
-    // 1. 이미 메인 프레임에 스크립트가 주입되어 있는지 확인
+    // 1. 이미 메인 프레임에 스크립트가 주입되어 있는지 확인 (1ms)
     const checkResult = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => typeof window.hasInjectedElementSelector !== "undefined"
@@ -29,15 +29,21 @@ document.getElementById("start-btn").addEventListener("click", async () => {
 
     const isAlreadyInjected = checkResult && checkResult[0] && checkResult[0].result === true;
 
-    // 2. 주입되지 않은 경우 메인 프레임에 스크립트 파일 주입
+    // 2. 주입되지 않은 경우 메인 프레임에 우선 확실하게 스크립트 파일 주입
     if (!isAlreadyInjected) {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
       });
     }
+
+    // 3. 서브프레임(Google Stitch 등 iframe 기반 웹앱) 대상 비동기 확장 주입 (광고 iframe 오류 시에도 무시)
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
+      files: ["i18n.js", "turndown.js", "turndown-plugin-gfm.js", "content.js"]
+    }).catch(() => {});
     
-    // 3. 메인 프레임에서 호버 선택 모드 직접 활성화 (포트 단절 및 다중 iframe 메시징 충돌 방지)
+    // 4. 메인 프레임에서 호버 선택 모드 즉시 직접 활성화 (0ms 즉각 반응)
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -49,13 +55,14 @@ document.getElementById("start-btn").addEventListener("click", async () => {
         args: [translateMode]
       });
     } catch (directErr) {
-      // 직접 실행 실패 시 fallback으로 메인 프레임(frameId: 0) 대상 메시지 전송 시도
-      await chrome.tabs.sendMessage(
-        tab.id,
-        { action: "start_hover_selection", mode: translateMode },
-        { frameId: 0 }
-      ).catch(() => {});
+      console.warn("Direct execution fallback:", directErr);
     }
+
+    // 5. 전체 탭 대상 메시지 브로드캐스트 (서브프레임 내부 선택 모드 동시 활성화)
+    chrome.tabs.sendMessage(
+      tab.id,
+      { action: "start_hover_selection", mode: translateMode }
+    ).catch(() => {});
     
     window.close(); // 성공 시 팝업 닫기
   } catch (error) {
